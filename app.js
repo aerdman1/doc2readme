@@ -207,7 +207,8 @@ function renderResults() {
     tabs.append(b);
   });
   const cur = previewable[active];
-  $('preview').textContent = cur ? cur.text : '';
+  $('preview').textContent = cur ? stripPageFrontmatter(cur.text) : '';
+  $('fmNote').hidden = !(cur && hasFrontmatter(cur.text));
   $('copyBtn').disabled = !cur;
   $('dlOneBtn').disabled = !cur;
   $('previewBtn').disabled = !cur;
@@ -294,6 +295,7 @@ function download(blob, name) {
 $('dlOneBtn').addEventListener('click', () => {
   const f = converted.filter((x) => x.text !== undefined)[active];
   if (!f) return;
+  // The download is the git-sync artifact, so it keeps its frontmatter.
   download(new Blob([f.text], { type: 'text/markdown' }), f.path.split('/').pop());
 });
 
@@ -301,8 +303,8 @@ $('copyBtn').addEventListener('click', async () => {
   const f = converted.filter((x) => x.text !== undefined)[active];
   if (!f) return;
   try {
-    await navigator.clipboard.writeText(f.text);
-    setStatus('Copied ' + f.path + ' to the clipboard.');
+    await navigator.clipboard.writeText(stripPageFrontmatter(f.text));
+    setStatus('Copied ' + f.path + ' — ready to paste into ReadMe.');
   } catch (e) {
     setStatus('Could not copy — select the text and copy manually.', true);
   }
@@ -338,8 +340,15 @@ function closePreview() {
   $('previewModal').hidden = true;
   document.body.style.overflow = '';
 }
+// Frontmatter only matters to git-sync: ReadMe reads title/slug/hidden from
+// it when a repo is synced. Pasting into the editor, it is just four lines of
+// junk at the top of the page. So the on-screen pane and the Copy button show
+// the body, while downloads and the .zip keep the full file.
 function stripPageFrontmatter(t) {
-  return t.replace(/^---\n[\s\S]*?\n---\n+/, '');
+  return String(t || '').replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n+/, '');
+}
+function hasFrontmatter(t) {
+  return /^---\r?\n[\s\S]*?\r?\n---/.test(String(t || ''));
 }
 $('previewBtn').addEventListener('click', openPreview);
 $('previewClose').addEventListener('click', closePreview);

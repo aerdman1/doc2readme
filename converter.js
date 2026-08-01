@@ -1093,7 +1093,8 @@ async function convertDocument(arrayBuffer, filename, opts) {
   blocks = demoteLabelHeadings(blocks, opts.labels, opts.labelStyle, report);
   blocks = remapHeadingLevels(blocks, opts.topLevel, opts.maxLevel, report);
 
-  const fallbackTitle = stem.replace(/[-_]+/g, ' ').trim();
+  // "pasted" is a placeholder filename, not a real document title.
+  const fallbackTitle = stem === 'pasted' ? '' : stem.replace(/[-_]+/g, ' ').trim();
   const title = opts.title || report.mdTitle ||
                 (zip ? docTitle(zip, fallbackTitle) : fallbackTitle);
   const { urls, files: imageFiles } = zip

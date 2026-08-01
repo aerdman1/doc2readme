@@ -293,6 +293,7 @@ pre.md {
   border-bottom: 1px solid var(--border); color: var(--text-dim); line-height: 1.62;
 }
 .resfoot { display: flex; gap: 9px; padding: 14px 18px; flex-wrap: wrap; align-items: center; }
+.fmnote { font-size: 11.5px; color: var(--faint); flex: 1 1 190px; line-height: 1.45; }
 
 .report { font-size: 13px; }
 .report .hd { font-weight: 650; padding: 11px 0 4px; color: var(--text); }
@@ -314,6 +315,9 @@ pre.md {
 .note svg { flex: none; margin-top: 1px; }
 
 /* ----------------------------------------------------------------- modal */
+/* The preview is deliberately light: a published ReadMe page is light, so a
+   dark preview would misrepresent what you are about to publish. Scoped
+   variables rather than a second stylesheet. */
 .modal {
   position: fixed; inset: 0; z-index: 100; display: flex;
   align-items: center; justify-content: center; padding: 28px;
@@ -321,61 +325,93 @@ pre.md {
 }
 .modal[hidden] { display: none; }
 .modal-card {
-  background: var(--panel); border: 1px solid var(--border-2); border-radius: 14px;
+  --pv-bg:      #ffffff;
+  --pv-soft:    #f6f8fa;
+  --pv-line:    #dfe5ec;
+  --pv-ink:     #1c2733;
+  --pv-body:    #384656;
+  --pv-dim:     #6b7a8c;
+  --pv-link:    #0b6bcb;
+  --pv-code-bg: #f2f5f8;
+
+  background: var(--pv-bg); border: 1px solid var(--border-2); border-radius: 14px;
   width: min(980px, 100%); max-height: 100%; display: flex; flex-direction: column;
   box-shadow: 0 26px 70px rgba(0,0,0,.6); overflow: hidden;
 }
 .modal-head {
   display: flex; align-items: center; gap: 13px; flex-wrap: wrap;
-  padding: 14px 19px; border-bottom: 1px solid var(--border); background: var(--bg-2);
+  padding: 14px 19px; border-bottom: 1px solid var(--pv-line);
+  background: var(--pv-soft); color: var(--pv-ink);
 }
+.modal-head strong { color: var(--pv-ink); }
 .modal-head .spacer { flex: 1; }
-.modal-note { font-size: 11.5px; color: var(--faint); }
-.modal-body { overflow: auto; padding: 30px 34px 46px; background: var(--panel); }
+.modal-note { font-size: 11.5px; color: var(--pv-dim); }
+.modal-head button.ghost {
+  background: var(--pv-bg); border-color: var(--pv-line); color: var(--pv-body);
+}
+.modal-head button.ghost:hover { border-color: var(--pv-link); color: var(--pv-link); }
+.modal-body { overflow: auto; padding: 34px 38px 50px; background: var(--pv-bg); }
 
-/* preview typography */
-.pv { font-size: 15px; line-height: 1.7; color: var(--text-dim); max-width: 47rem; }
-.pv h1, .pv h2, .pv h3, .pv h4 { color: var(--text); line-height: 1.3; margin: 1.9em 0 .55em; font-weight: 680; }
+/* preview typography — light, close to a published ReadMe page */
+.pv { font-size: 15px; line-height: 1.7; color: var(--pv-body); max-width: 47rem; }
+.pv h1, .pv h2, .pv h3, .pv h4 { color: var(--pv-ink); line-height: 1.3; margin: 1.9em 0 .55em; font-weight: 680; }
 .pv h1 { font-size: 1.85em; }
-.pv h2 { font-size: 1.4em; padding-bottom: .32em; border-bottom: 1px solid var(--border); }
+.pv h2 { font-size: 1.4em; padding-bottom: .32em; border-bottom: 1px solid var(--pv-line); }
 .pv h3 { font-size: 1.15em; }
 .pv h4 { font-size: 1em; }
 .pv > :first-child { margin-top: 0; }
 .pv p { margin: 0 0 1.05em; }
-.pv a { color: var(--accent-2); text-decoration: none; }
+.pv a { color: var(--pv-link); text-decoration: none; }
 .pv a:hover { text-decoration: underline; }
-.pv strong { color: var(--text); font-weight: 650; }
+.pv strong { color: var(--pv-ink); font-weight: 650; }
 .pv ul, .pv ol { margin: 0 0 1.05em; padding-left: 1.5em; }
 .pv li { margin: .3em 0; }
-.pv img { max-width: 100%; border-radius: 8px; border: 1px solid var(--border); }
-.pv hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
+.pv img { max-width: 100%; border-radius: 8px; border: 1px solid var(--pv-line); }
+.pv hr { border: none; border-top: 1px solid var(--pv-line); margin: 2em 0; }
 .pv code {
-  background: var(--code-bg); padding: .14em .4em; border-radius: 5px; border: 1px solid var(--border);
+  background: var(--pv-code-bg); padding: .14em .4em; border-radius: 5px;
+  border: 1px solid var(--pv-line); color: #b3306b;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .86em;
 }
-.pv blockquote { margin: 0 0 1.05em; padding: .1em 0 .1em 1.1em; border-left: 3px solid var(--border-2); color: var(--muted); }
-.pv .pv-code { position: relative; background: var(--code-bg); border-radius: 9px; margin: 0 0 1.25em; overflow: hidden; border: 1px solid var(--border); }
-.pv .pv-lang { position: absolute; top: 0; right: 0; font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--faint); padding: 7px 12px; }
+.pv blockquote {
+  margin: 0 0 1.05em; padding: .1em 0 .1em 1.1em;
+  border-left: 3px solid var(--pv-line); color: var(--pv-dim);
+}
+/* code blocks stay dark, the way ReadMe renders them */
+.pv .pv-code {
+  position: relative; background: #0d1117; border-radius: 9px; margin: 0 0 1.25em;
+  overflow: hidden; border: 1px solid #1e2733;
+}
+.pv .pv-lang {
+  position: absolute; top: 0; right: 0; font-size: 10.5px; letter-spacing: .05em;
+  text-transform: uppercase; color: #7d8ea3; padding: 7px 12px;
+}
 .pv .pv-code pre { margin: 0; padding: 16px 18px; overflow-x: auto; }
-.pv .pv-code code { background: none; padding: 0; border: none; color: #cfe0f2; font-size: 12.5px; line-height: 1.6; }
+.pv .pv-code code {
+  background: none; padding: 0; border: none; color: #dce6f2;
+  font-size: 12.5px; line-height: 1.6;
+}
 .pv .pv-tablewrap { overflow-x: auto; margin: 0 0 1.25em; }
 .pv table { border-collapse: collapse; width: 100%; font-size: .92em; }
-.pv th, .pv td { border: 1px solid var(--border); padding: 9px 12px; text-align: left; vertical-align: top; }
-.pv th { background: var(--bg-2); font-weight: 650; color: var(--text); }
-.pv .pv-callout { border-radius: 9px; padding: 15px 18px; margin: 0 0 1.25em; border: 1px solid var(--border); border-left-width: 3px; background: var(--bg-2); }
-.pv .pv-callout-t { display: flex; gap: 10px; align-items: flex-start; font-weight: 620; color: var(--text); }
+.pv th, .pv td { border: 1px solid var(--pv-line); padding: 9px 12px; text-align: left; vertical-align: top; }
+.pv th { background: var(--pv-soft); font-weight: 650; color: var(--pv-ink); }
+.pv .pv-callout {
+  border-radius: 9px; padding: 15px 18px; margin: 0 0 1.25em;
+  border: 1px solid var(--pv-line); border-left-width: 3px; background: var(--pv-soft);
+}
+.pv .pv-callout-t { display: flex; gap: 10px; align-items: flex-start; font-weight: 620; color: var(--pv-ink); }
 .pv .pv-callout p { margin: .5em 0 0; font-weight: 400; }
 .pv .pv-callout p:last-child { margin-bottom: 0; }
-.pv .pv-info  { border-left-color: var(--accent); }
-.pv .pv-warn  { border-left-color: var(--warn); }
-.pv .pv-error { border-left-color: var(--err); }
-.pv .pv-ok    { border-left-color: var(--ok); }
-.pv .pv-acc { border: 1px solid var(--border); border-radius: 9px; padding: 12px 16px; margin: 0 0 1.1em; }
-.pv .pv-acc summary { cursor: pointer; font-weight: 620; color: var(--text); }
+.pv .pv-info  { border-left-color: #0b6bcb; background: #eef5fd; }
+.pv .pv-warn  { border-left-color: #c47f16; background: #fdf6e9; }
+.pv .pv-error { border-left-color: #cc3b40; background: #fdeeee; }
+.pv .pv-ok    { border-left-color: #10794a; background: #edf8f2; }
+.pv .pv-acc { border: 1px solid var(--pv-line); border-radius: 9px; padding: 12px 16px; margin: 0 0 1.1em; }
+.pv .pv-acc summary { cursor: pointer; font-weight: 620; color: var(--pv-ink); }
 .pv .pv-tabs, .pv .pv-cards, .pv .pv-cols { margin: 0 0 1.25em; }
-.pv .pv-tab { border: 1px solid var(--border); border-radius: 9px; padding: 13px 16px; margin-bottom: 9px; }
-.pv .pv-tab-h { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: 680; margin-bottom: 7px; }
+.pv .pv-tab { border: 1px solid var(--pv-line); border-radius: 9px; padding: 13px 16px; margin-bottom: 9px; }
+.pv .pv-tab-h { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--pv-dim); font-weight: 680; margin-bottom: 7px; }
 .pv .pv-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 13px; }
-.pv .pv-card { border: 1px solid var(--border); border-radius: 10px; padding: 15px 17px; }
+.pv .pv-card { border: 1px solid var(--pv-line); border-radius: 10px; padding: 15px 17px; }
 .pv .pv-card h4 { margin: 0 0 .4em; }
 .pv .pv-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 17px; }

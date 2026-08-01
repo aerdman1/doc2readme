@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>doc2readme — Word, PDF &amp; Markdown to ReadMe</title>
-<link rel="stylesheet" href="styles.css?v=8914b8cd">
+<link rel="stylesheet" href="styles.css?v=f6789433">
 </head>
 <body>
 
@@ -218,9 +218,11 @@
       <div class="tabs" id="tabs"></div>
       <pre class="md" id="preview"></pre>
       <div class="resfoot">
-        <button class="ghost primaryish" id="previewBtn">Preview</button>
-        <button class="ghost" id="copyBtn">Copy page</button>
-        <button class="ghost" id="dlOneBtn">Download page</button>
+        <button class="ghost primaryish" id="previewBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Preview</button>
+        <button class="ghost" id="copyBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy page</button>
+        <button class="ghost" id="dlOneBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 11l5 5 5-5M4 21h16"/></svg>Download page</button>
+        <span class="fmnote" id="fmNote" hidden>Frontmatter is added to downloads only —
+          copy and paste gets the clean body.</span>
       </div>
     </div>
 
@@ -248,10 +250,10 @@
   </div>
 </div>
 
-<script src="preview.js?v=ff68d3de"></script>
+<script src="preview.js?v=7876c2b4"></script>
 <script src="md-clean.js?v=e11dbd15"></script>
 <script src="pdf-extract.js?v=bcc01aa2"></script>
-<script src="converter.js?v=7c13d648"></script>
-<script src="app.js?v=f55d8f82"></script>
+<script src="converter.js?v=4d5bc53c"></script>
+<script src="app.js?v=acafe03f"></script>
 </body>
 </html>
