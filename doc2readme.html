@@ -131,6 +131,10 @@ body {
 }
 .drop:hover { border-color: rgba(47,124,246,.5); background: rgba(47,124,246,.05); }
 .drop.hover { border-color: var(--accent); background: rgba(47,124,246,.1); }
+.drop:focus-visible, button:focus-visible, select:focus-visible,
+input:focus-visible, textarea:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent-2); outline-offset: 2px;
+}
 .drop .art { width: 72px; height: 56px; margin: 0 auto 13px; display: block; }
 .drop strong { display: block; color: var(--text); font-size: 14px; font-weight: 650; }
 .drop .sm { font-size: 12.5px; color: var(--accent-2); }
@@ -476,7 +480,7 @@ pre.md {
           <button id="modeDoc" class="on" role="tab" aria-selected="true">Word &amp; PDF</button>
           <button id="modeMd" role="tab" aria-selected="false">Markdown</button>
         </div>
-        <div class="drop" id="drop">
+        <div class="drop" id="drop" role="button" tabindex="0" aria-label="Choose documents to convert">
           <svg class="art" viewBox="0 0 72 56" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <path d="M8 34V13a4 4 0 0 1 4-4h13l4 5h31a4 4 0 0 1 4 4v16" stroke="#33475f" stroke-width="2"
         stroke-linecap="round" stroke-linejoin="round"/>
@@ -700,6 +704,17 @@ pre.md {
  */
 'use strict';
 
+// A converted document can carry any URL, and the preview turns them into
+// real <a> and <img>. javascript: and data:text/html would run script on
+// click, so only known-safe schemes survive.
+const SAFE_URL = /^(https?:|mailto:|tel:|[.#/?]|[^:]*$)/i;
+const SAFE_IMG = /^(https?:|data:image\/(png|jpe?g|gif|webp|svg\+xml|avif|bmp|x-icon);|[.#/?]|[^:]*$)/i;
+
+function safeUrl(u, forImage) {
+  const raw = String(u || '').trim().replace(/[\u0000-\u001f]/g, '');
+  return (forImage ? SAFE_IMG : SAFE_URL).test(raw) ? raw : '#';
+}
+
 const H = (s) => String(s == null ? '' : s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;');
@@ -725,9 +740,9 @@ function inline(src) {
   });
 
   t = t.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g,
-    (m, alt, src2) => '<img src="' + H(src2) + '" alt="' + H(alt) + '">');
+    (m, alt, src2) => '<img src="' + H(safeUrl(src2, true)) + '" alt="' + H(alt) + '">');
   t = t.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g,
-    (m, txt, href) => '<a href="' + H(href) + '" target="_blank" rel="noreferrer">' + txt + '</a>');
+    (m, txt, href) => '<a href="' + H(safeUrl(href)) + '" target="_blank" rel="noreferrer">' + txt + '</a>');
 
   t = t.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
   t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
@@ -736,7 +751,7 @@ function inline(src) {
 
   // bare URLs, but not ones already inside an href
   t = t.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g,
-    (m, pre, url) => pre + '<a href="' + H(url) + '" target="_blank" rel="noreferrer">' + url + '</a>');
+    (m, pre, url) => pre + '<a href="' + H(safeUrl(url)) + '" target="_blank" rel="noreferrer">' + url + '</a>');
 
   t = t.replace(/\\([\\`*_{}\[\]()#+\-.!<>|~])/g, '$1');   // unescape
   t = t.replace(/ (\d+) /g, (m, i) => spans[+i]);
@@ -1312,6 +1327,24 @@ function buildGitSync(docs, specs, opts) {
       });
     }
     kids.sort(sortEntries);
+
+    // Two files in one folder can reduce to the same slug — "01-setup.docx"
+    // and "setup.md", or names differing only by case. Without this they
+    // overwrite each other in the zip and one document is silently lost.
+    const used = new Set();
+    for (const k of kids) {
+      let slug = k.slug || 'page';
+      if (used.has(slug.toLowerCase())) {
+        let n = 2;
+        while (used.has((slug + '-' + n).toLowerCase())) n++;
+        report.warnings.push(
+          'two documents in "' + basePath.replace(/^docs\//, '') + '" both became "'
+          + slug + '" — the second is now "' + slug + '-' + n + '".');
+        slug = slug + '-' + n;
+      }
+      used.add(slug.toLowerCase());
+      k.slug = slug;
+    }
 
     out.push({ path: basePath + '/_order.yaml', text: kids.map((k) => yamlItem(k.slug)).join('') });
 
@@ -3053,6 +3086,13 @@ let active = 0;
 /* ---- file intake ---- */
 const drop = $('drop');
 drop.addEventListener('click', () => $('picker').click());
+// The drop zone is the only way in, so it has to work without a mouse.
+drop.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+    e.preventDefault();
+    $('picker').click();
+  }
+});
 $('picker').addEventListener('change', (e) => addFiles(e.target.files));
 ['dragenter', 'dragover'].forEach((ev) =>
   drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('hover'); }));
@@ -3389,8 +3429,11 @@ $('copyBtn').addEventListener('click', async () => {
 
 $('zipBtn').addEventListener('click', () => {
   if (!converted.length) return;
+  // An archive conversion already emits full git-sync paths (docs/...,
+  // reference/...). Prefixing again produced docs/docs/... which is not a
+  // drop-in for anything. Single documents still need the docs/ wrapper.
   const files = converted.map((f) => ({
-    path: 'docs/' + f.path,
+    path: /^(docs|reference)\//.test(f.path) ? f.path : 'docs/' + f.path,
     data: f.text !== undefined ? f.text : f.data,
   }));
   download(docx2readme.makeZip(files), 'readme-docs.zip');
@@ -3413,6 +3456,7 @@ if (typeof DecompressionStream === 'undefined') {
 
 
 /* ---- preview ---- */
+let previewOpener = null;
 function openPreview() {
   const f = converted.filter((x) => x.text !== undefined)[active];
   if (!f) return;
@@ -3420,10 +3464,20 @@ function openPreview() {
   $('previewBody').innerHTML = readmePreview.render(stripPageFrontmatter(f.text));
   $('previewModal').hidden = false;
   document.body.style.overflow = 'hidden';
+  previewOpener = document.activeElement;
+  $('previewClose').focus();
 }
 function closePreview() {
+  if ($('previewModal').hidden) return;
   $('previewModal').hidden = true;
   document.body.style.overflow = '';
+  // Send focus back where it came from; if that was <body> (the button was
+  // activated programmatically, or by a click that did not focus it) put it
+  // on the Preview button so keyboard users are not dumped at the top.
+  const back = (previewOpener && previewOpener !== document.body && previewOpener.focus)
+    ? previewOpener : $('previewBtn');
+  if (back && back.focus) back.focus();
+  previewOpener = null;
 }
 // Frontmatter only matters to git-sync: ReadMe reads title/slug/hidden from
 // it when a repo is synced. Pasting into the editor, it is just four lines of

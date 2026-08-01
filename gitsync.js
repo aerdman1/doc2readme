@@ -115,6 +115,24 @@ function buildGitSync(docs, specs, opts) {
     }
     kids.sort(sortEntries);
 
+    // Two files in one folder can reduce to the same slug — "01-setup.docx"
+    // and "setup.md", or names differing only by case. Without this they
+    // overwrite each other in the zip and one document is silently lost.
+    const used = new Set();
+    for (const k of kids) {
+      let slug = k.slug || 'page';
+      if (used.has(slug.toLowerCase())) {
+        let n = 2;
+        while (used.has((slug + '-' + n).toLowerCase())) n++;
+        report.warnings.push(
+          'two documents in "' + basePath.replace(/^docs\//, '') + '" both became "'
+          + slug + '" — the second is now "' + slug + '-' + n + '".');
+        slug = slug + '-' + n;
+      }
+      used.add(slug.toLowerCase());
+      k.slug = slug;
+    }
+
     out.push({ path: basePath + '/_order.yaml', text: kids.map((k) => yamlItem(k.slug)).join('') });
 
     for (const k of kids) {

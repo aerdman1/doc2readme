@@ -7,6 +7,13 @@ let active = 0;
 /* ---- file intake ---- */
 const drop = $('drop');
 drop.addEventListener('click', () => $('picker').click());
+// The drop zone is the only way in, so it has to work without a mouse.
+drop.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+    e.preventDefault();
+    $('picker').click();
+  }
+});
 $('picker').addEventListener('change', (e) => addFiles(e.target.files));
 ['dragenter', 'dragover'].forEach((ev) =>
   drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('hover'); }));
@@ -343,8 +350,11 @@ $('copyBtn').addEventListener('click', async () => {
 
 $('zipBtn').addEventListener('click', () => {
   if (!converted.length) return;
+  // An archive conversion already emits full git-sync paths (docs/...,
+  // reference/...). Prefixing again produced docs/docs/... which is not a
+  // drop-in for anything. Single documents still need the docs/ wrapper.
   const files = converted.map((f) => ({
-    path: 'docs/' + f.path,
+    path: /^(docs|reference)\//.test(f.path) ? f.path : 'docs/' + f.path,
     data: f.text !== undefined ? f.text : f.data,
   }));
   download(docx2readme.makeZip(files), 'readme-docs.zip');
@@ -367,6 +377,7 @@ if (typeof DecompressionStream === 'undefined') {
 
 
 /* ---- preview ---- */
+let previewOpener = null;
 function openPreview() {
   const f = converted.filter((x) => x.text !== undefined)[active];
   if (!f) return;
@@ -374,10 +385,20 @@ function openPreview() {
   $('previewBody').innerHTML = readmePreview.render(stripPageFrontmatter(f.text));
   $('previewModal').hidden = false;
   document.body.style.overflow = 'hidden';
+  previewOpener = document.activeElement;
+  $('previewClose').focus();
 }
 function closePreview() {
+  if ($('previewModal').hidden) return;
   $('previewModal').hidden = true;
   document.body.style.overflow = '';
+  // Send focus back where it came from; if that was <body> (the button was
+  // activated programmatically, or by a click that did not focus it) put it
+  // on the Preview button so keyboard users are not dumped at the top.
+  const back = (previewOpener && previewOpener !== document.body && previewOpener.focus)
+    ? previewOpener : $('previewBtn');
+  if (back && back.focus) back.focus();
+  previewOpener = null;
 }
 // Frontmatter only matters to git-sync: ReadMe reads title/slug/hidden from
 // it when a repo is synced. Pasting into the editor, it is just four lines of
