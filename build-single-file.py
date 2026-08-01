@@ -34,9 +34,11 @@ def main():
     converter = read("converter.js")
     app = read("app.js")
     pdfextract = read("pdf-extract.js")
+    preview = read("preview.js")
 
     for name, body in (("converter.js", converter), ("app.js", app),
-                       ("pdf-extract.js", pdfextract)):
+                       ("pdf-extract.js", pdfextract),
+                       ("preview.js", preview)):
         # A literal </script> inside a JS string would close the tag early.
         if "</script" in body.lower():
             sys.exit("%s contains a literal </script> — escape it first" % name)
@@ -61,8 +63,9 @@ def main():
         "})();\n")
 
     page = page.replace(
-        '<script src="pdf-extract.js"></script>\n<script src="converter.js"></script>\n<script src="app.js"></script>',
+        '<script src="preview.js"></script>\n<script src="pdf-extract.js"></script>\n<script src="converter.js"></script>\n<script src="app.js"></script>',
         "<script>\n" + boot + "\n</script>\n"
+        "<script>\n" + preview + "\n</script>\n"
         "<script>\n" + pdfextract + "\n</script>\n"
         "<script>\n" + converter + "\n</script>\n"
         "<script>\n" + app + "\n</script>", 1)
@@ -93,7 +96,11 @@ def main():
     with open(out, "w", encoding="utf-8") as fh:
         fh.write(page)
 
-    leftover = re.findall(r'(?:src|href)="(?!data:|#)([^"]+)"', page)
+    # Check markup only — inlined JS legitimately contains src="/href=" inside
+    # string literals, which would otherwise read as unresolved references.
+    markup = re.sub(r"<script\b[^>]*>.*?</script>", "", page, flags=re.S)
+    markup = re.sub(r"<style\b[^>]*>.*?</style>", "", markup, flags=re.S)
+    leftover = re.findall(r'(?:src|href)="(?!data:|#)([^"]+)"', markup)
     if leftover:
         sys.exit("still references external files: %s" % ", ".join(leftover))
 

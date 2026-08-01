@@ -55,8 +55,29 @@ text instead.
 Body images are extracted; page logos and watermarks are skipped. Warning and
 note paragraphs become real ReadMe callout boxes.
 
+**Output is checked against ReadMe's own MDX compiler.** ReadMe builds pages as
+MDX, where a stray `<access_token>` in your text is read as a JSX tag and takes
+the entire page down with a syntax error. Everything this produces — headings,
+table cells, prose, URLs — is escaped so that can't happen.
+
+**Preview before you publish.** The Preview button renders the converted page
+approximately the way ReadMe will, so you can check structure without pasting
+it in first. It is a close approximation, not ReadMe's editor.
+
 Every change it makes is listed in the summary panel after conversion, so you
 can see exactly what it did rather than diffing by hand.
+
+---
+
+## Images need one manual step
+
+The page has no network access — that is the whole privacy guarantee — so it
+cannot upload anything to ReadMe.
+
+Images embedded in your document are extracted into an `images/` folder inside
+the `.zip` and referenced by relative path. Upload them to ReadMe (or any
+host) and swap those paths for the real URLs. Images that were already full
+URLs in the source are left alone and keep working as-is.
 
 ---
 

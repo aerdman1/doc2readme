@@ -251,7 +251,13 @@ function slugify(v) {
 // escapes it.
 const MD_SPECIAL = /([\\`*\[\]<>])/g;
 const LONE_UNDERSCORE = /(?<![0-9A-Za-z])_|_(?![0-9A-Za-z])/g;
-const esc = (t) => (t || '').replace(MD_SPECIAL, '\\$1').replace(LONE_UNDERSCORE, '\\_');
+// A bare URL is autolinked by GFM, and a backslash-escaped angle bracket
+// *inside* that link still reaches MDX as a tag. Percent-encode instead —
+// which is what those characters should be in a URL anyway.
+const encodeUrlAngles = (t) =>
+  (t || '').replace(/https?:\/\/[^\s)]*/g,
+    (u) => u.replace(/</g, '%3C').replace(/>/g, '%3E'));
+const esc = (t) => encodeUrlAngles(t || '').replace(MD_SPECIAL, '\\$1').replace(LONE_UNDERSCORE, '\\_');
 
 function wrapEmph(piece, marker) {
   const stripped = piece.trim();
@@ -606,7 +612,7 @@ function parseTable(tbl, ctx) {
       const tcpr = wFind(tc, 'tcPr');
       const gs = tcpr && wFind(tcpr, 'gridSpan');
       if (gs) span = Math.max(1, parseInt(wAttr(gs, 'val') || '1', 10) || 1);
-      cells.push(pieces.join('<br>').replace(/\|/g, '\\|'));
+      cells.push(pieces.join('<br />').replace(/\|/g, '\\|'));
       for (let i = 1; i < span; i++) cells.push('');
     }
     rows.push(cells);
@@ -864,6 +870,14 @@ function remapHeadingLevels(blocks, topLevel, maxLevel, report) {
 // Rendering
 // ---------------------------------------------------------------------------
 
+// ReadMe compiles pages as MDX, where a bare <angle> is parsed as a JSX tag
+// and a malformed one takes the whole page down with a syntax error. Heading
+// text is emitted verbatim (escaping it earlier would corrupt slugs and label
+// matching), so it gets escaped here at the last moment.
+function escapeHeading(text) {
+  return (text || '').replace(/([<>])/g, '\\$1');
+}
+
 function renderTable(rows) {
   if (!rows.length) return '';
   const width = Math.max(...rows.map((r) => r.length));
@@ -887,7 +901,7 @@ function renderBlocks(blocks, imageUrls) {
   for (const block of blocks) {
     if (block.kind === 'blank') continue;
     if (block.kind === 'heading') {
-      out.push('#'.repeat(block.level) + ' ' + block.text);
+      out.push('#'.repeat(block.level) + ' ' + escapeHeading(block.text));
       recentHeading = block.text;
     } else if (block.kind === 'para') {
       let text = block.text;

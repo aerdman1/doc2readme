@@ -138,6 +138,8 @@ function renderResults() {
   box.hidden = !any;
   $('reportPanel').hidden = !reports.length;
   $('empty').hidden = any || reports.length > 0;
+  // Only nag about images when the conversion actually produced some.
+  $('imgBanner').hidden = !converted.some((f) => f.data !== undefined);
 
   const tabs = $('tabs');
   tabs.innerHTML = '';
@@ -152,6 +154,7 @@ function renderResults() {
   $('preview').textContent = cur ? cur.text : '';
   $('copyBtn').disabled = !cur;
   $('dlOneBtn').disabled = !cur;
+  $('previewBtn').disabled = !cur;
 
   /* report */
   const rep = $('report');
@@ -255,3 +258,25 @@ if (typeof DecompressionStream === 'undefined') {
   setStatus('This browser is too old — needs Chrome/Edge 103+, Firefox 113+ or Safari 16.4+.', true);
   $('convertBtn').disabled = true;
 }
+
+
+/* ---- preview ---- */
+function openPreview() {
+  const f = converted.filter((x) => x.text !== undefined)[active];
+  if (!f) return;
+  $('previewTitle').textContent = 'Preview — ' + f.path;
+  $('previewBody').innerHTML = readmePreview.render(stripFrontmatter(f.text));
+  $('previewModal').hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+function closePreview() {
+  $('previewModal').hidden = true;
+  document.body.style.overflow = '';
+}
+function stripFrontmatter(t) {
+  return t.replace(/^---\n[\s\S]*?\n---\n+/, '');
+}
+$('previewBtn').addEventListener('click', openPreview);
+$('previewClose').addEventListener('click', closePreview);
+$('previewModal').addEventListener('click', (e) => { if (e.target.id === 'previewModal') closePreview(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePreview(); });
