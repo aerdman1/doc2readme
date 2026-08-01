@@ -84,6 +84,7 @@ input[type=text], select {
 }
 .grp { margin-bottom: 11px; }
 .grp:last-child { margin-bottom: 0; }
+.grp.spaced { margin-top: 11px; }
 .hint { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
 .checkline { display: flex; align-items: flex-start; gap: 7px; font-size: 12.5px; margin-top: 8px; }
 .checkline input { accent-color: var(--accent); margin-top: 2px; flex: none; }
@@ -135,6 +136,7 @@ pre.md {
 .report .line { padding: 2px 0 2px 15px; position: relative; color: var(--muted); }
 .report .line::before { content: "›"; position: absolute; left: 2px; }
 .report .line.err { color: var(--err); }
+.report .warn { color: var(--warn); }
 .report code { background: var(--code); padding: 1px 5px; border-radius: 4px; font-size: 11.5px; }
 
 /* ---------- empty state: horizontal capability cards ---------- */

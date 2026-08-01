@@ -89,9 +89,32 @@ $('convertBtn').addEventListener('click', async () => {
   setStatus('Converting…');
   $('convertBtn').disabled = true;
 
+  // guide.docx and guide.pdf both reduce to the slug "guide". Without this
+  // the second one silently overwrites the first in the preview and the zip.
+  const usedPaths = new Set();
+  const dedupe = (path) => {
+    if (!usedPaths.has(path)) { usedPaths.add(path); return path; }
+    const dot = path.lastIndexOf('.');
+    const stem = dot > 0 ? path.slice(0, dot) : path;
+    const ext = dot > 0 ? path.slice(dot) : '';
+    let n = 2;
+    while (usedPaths.has(stem + '-' + n + ext)) n++;
+    const out = stem + '-' + n + ext;
+    usedPaths.add(out);
+    return out;
+  };
+
   for (const p of picked) {
     try {
       const { files, report } = await docx2readme.convertDocument(p.buffer, p.name, opts);
+      for (const f of files) {
+        const fresh = dedupe(f.path);
+        if (fresh !== f.path) {
+          (report.notes = report.notes || []).push(
+            'another document already produced ' + f.path + ' — saved as ' + fresh);
+          f.path = fresh;
+        }
+      }
       converted.push(...files);
       reports.push(report);
     } catch (err) {
@@ -160,11 +183,11 @@ function renderResults() {
     if (r.pdfTables) bits.push(r.pdfTables + ' table(s) reconstructed');
     if (bits.length) add(escHtml(bits.join(', ')));
     if (r.autocorrectFixes) {
-      add('<span style="color:var(--warn)">Repaired ' + r.autocorrectFixes +
+      add('<span class="warn">Repaired ' + r.autocorrectFixes +
           ' Word AutoCorrect character(s) inside code blocks — those snippets would have failed when copied.</span>');
     }
     if (r.kind === 'pdf') {
-      add('<span style="color:var(--warn)">PDF source — headings, tables and code '
+      add('<span class="warn">PDF source — headings, tables and code '
         + 'blocks were inferred from font size and layout, because a PDF does not '
         + 'record them. Check the result more carefully than you would for Word.</span>');
     }

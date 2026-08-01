@@ -99,6 +99,7 @@ input[type=text], select {
 }
 .grp { margin-bottom: 11px; }
 .grp:last-child { margin-bottom: 0; }
+.grp.spaced { margin-top: 11px; }
 .hint { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
 .checkline { display: flex; align-items: flex-start; gap: 7px; font-size: 12.5px; margin-top: 8px; }
 .checkline input { accent-color: var(--accent); margin-top: 2px; flex: none; }
@@ -150,6 +151,7 @@ pre.md {
 .report .line { padding: 2px 0 2px 15px; position: relative; color: var(--muted); }
 .report .line::before { content: "›"; position: absolute; left: 2px; }
 .report .line.err { color: var(--err); }
+.report .warn { color: var(--warn); }
 .report code { background: var(--code); padding: 1px 5px; border-radius: 4px; font-size: 11.5px; }
 
 /* ---------- empty state: horizontal capability cards ---------- */
@@ -240,7 +242,7 @@ pre.md {
             <label for="hidden">Mark pages hidden, so you can review before publishing</label></div>
           <div class="checkline"><input type="checkbox" id="keepCover">
             <label for="keepCover">Keep cover page, revision history and Word's table of contents</label></div>
-          <div class="grp" style="margin-top:11px">
+          <div class="grp spaced">
             <label class="fld" for="extraLabels">Additional repeated headings</label>
             <input type="text" id="extraLabels" placeholder="Comma separated">
             <div class="hint">Anything else your template repeats that should not
@@ -1954,9 +1956,32 @@ $('convertBtn').addEventListener('click', async () => {
   setStatus('Converting…');
   $('convertBtn').disabled = true;
 
+  // guide.docx and guide.pdf both reduce to the slug "guide". Without this
+  // the second one silently overwrites the first in the preview and the zip.
+  const usedPaths = new Set();
+  const dedupe = (path) => {
+    if (!usedPaths.has(path)) { usedPaths.add(path); return path; }
+    const dot = path.lastIndexOf('.');
+    const stem = dot > 0 ? path.slice(0, dot) : path;
+    const ext = dot > 0 ? path.slice(dot) : '';
+    let n = 2;
+    while (usedPaths.has(stem + '-' + n + ext)) n++;
+    const out = stem + '-' + n + ext;
+    usedPaths.add(out);
+    return out;
+  };
+
   for (const p of picked) {
     try {
       const { files, report } = await docx2readme.convertDocument(p.buffer, p.name, opts);
+      for (const f of files) {
+        const fresh = dedupe(f.path);
+        if (fresh !== f.path) {
+          (report.notes = report.notes || []).push(
+            'another document already produced ' + f.path + ' — saved as ' + fresh);
+          f.path = fresh;
+        }
+      }
       converted.push(...files);
       reports.push(report);
     } catch (err) {
@@ -2025,11 +2050,11 @@ function renderResults() {
     if (r.pdfTables) bits.push(r.pdfTables + ' table(s) reconstructed');
     if (bits.length) add(escHtml(bits.join(', ')));
     if (r.autocorrectFixes) {
-      add('<span style="color:var(--warn)">Repaired ' + r.autocorrectFixes +
+      add('<span class="warn">Repaired ' + r.autocorrectFixes +
           ' Word AutoCorrect character(s) inside code blocks — those snippets would have failed when copied.</span>');
     }
     if (r.kind === 'pdf') {
-      add('<span style="color:var(--warn)">PDF source — headings, tables and code '
+      add('<span class="warn">PDF source — headings, tables and code '
         + 'blocks were inferred from font size and layout, because a PDF does not '
         + 'record them. Check the result more carefully than you would for Word.</span>');
     }
