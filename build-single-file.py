@@ -43,9 +43,8 @@ def main():
         if "</script" in body.lower():
             sys.exit("%s contains a literal </script> — escape it first" % name)
 
-    page = page.replace(
-        '<link rel="stylesheet" href="styles.css">',
-        "<style>\n" + css + "</style>", 1)
+    page = re.sub(r'<link rel="stylesheet" href="styles\.css(?:\?v=[0-9a-f]+)?">',
+                  lambda m: "<style>\n" + css + "</style>", page, count=1)
     # pdf.js is an ES module plus a worker, so it cannot simply be pasted in.
     # Embed both as strings, hand them to the page as blob: URLs, and point the
     # converter at those instead of vendor/ paths.
@@ -62,13 +61,20 @@ def main():
         "  window.__PDFJS_WORKER_URL__ = mk(" + js_string(pdfworker) + ");\n"
         "})();\n")
 
-    page = page.replace(
-        '<script src="preview.js"></script>\n<script src="pdf-extract.js"></script>\n<script src="converter.js"></script>\n<script src="app.js"></script>',
-        "<script>\n" + boot + "\n</script>\n"
-        "<script>\n" + preview + "\n</script>\n"
-        "<script>\n" + pdfextract + "\n</script>\n"
-        "<script>\n" + converter + "\n</script>\n"
-        "<script>\n" + app + "\n</script>", 1)
+    script_block = re.compile(
+        r'<script src="preview\.js(?:\?v=[0-9a-f]+)?"></script>\s*'
+        r'<script src="pdf-extract\.js(?:\?v=[0-9a-f]+)?"></script>\s*'
+        r'<script src="converter\.js(?:\?v=[0-9a-f]+)?"></script>\s*'
+        r'<script src="app\.js(?:\?v=[0-9a-f]+)?"></script>')
+    if not script_block.search(page):
+        sys.exit("could not find the script block to inline")
+    page = script_block.sub(
+        lambda m: ("<script>\n" + boot + "\n</script>\n"
+                   "<script>\n" + preview + "\n</script>\n"
+                   "<script>\n" + pdfextract + "\n</script>\n"
+                   "<script>\n" + converter + "\n</script>\n"
+                   "<script>\n" + app + "\n</script>"),
+        page, count=1)
 
     # Inlining means the strict script-src/style-src can't apply. connect-src
     # stays 'none' — that is the clause that proves nothing is uploaded.
