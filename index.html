@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; worker-src 'self' blob:; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>doc2readme — Word &amp; PDF to ReadMe Markdown</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="topbar">
+  <h1>doc2readme</h1>
+  <span class="tag">Word &amp; PDF&nbsp;→&nbsp;ReadMe Markdown</span>
+  <span class="spacer"></span>
+  <span class="pill">🔒 Runs entirely in your browser — nothing is uploaded</span>
+</div>
+
+<div class="shell">
+
+  <!-- ============ sidebar: input + controls ============ -->
+  <div class="side">
+    <div class="panel">
+      <h2>Documents</h2>
+      <div class="body">
+        <div class="drop" id="drop">
+          <strong>Drop Word or PDF files here</strong>
+          <span class="sm">or click to browse</span>
+          <input type="file" id="picker" accept=".docx,.pdf" multiple hidden>
+        </div>
+        <ul class="files" id="fileList" hidden></ul>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Settings</h2>
+      <div class="body">
+        <div class="grp">
+          <label class="fld" for="category">Category folder</label>
+          <input type="text" id="category" placeholder="Optional — e.g. API Guides">
+          <div class="hint">Becomes a ReadMe category when you import the output.</div>
+        </div>
+
+        <div class="grp">
+          <label class="fld" for="split">Page splitting</label>
+          <select id="split">
+            <option value="0" selected>One page per document</option>
+            <option value="1">Split at top-level headings</option>
+            <option value="2">Split at second-level headings</option>
+          </select>
+        </div>
+
+        <div class="grp">
+          <label class="fld" for="maxLevel">Heading depth</label>
+          <select id="maxLevel">
+            <option value="3" selected>Up to H3 (recommended)</option>
+            <option value="4">Up to H4</option>
+            <option value="6">Keep every Word level</option>
+          </select>
+          <div class="hint">ReadMe's page contents panel stops at H3.</div>
+        </div>
+
+        <div class="grp">
+          <label class="fld" for="labelStyle">Repeated headings</label>
+          <select id="labelStyle">
+            <option value="bold" selected>Turn into bold text</option>
+            <option value="plain">Turn into plain text</option>
+            <option value="keep">Leave as headings</option>
+          </select>
+          <div class="hint">Reference docs repeat the same headings under every
+            endpoint. Left alone they crowd out the real sections in the contents panel.</div>
+        </div>
+
+        <details class="more">
+          <summary>Advanced</summary>
+          <div class="checkline"><input type="checkbox" id="callouts" checked>
+            <label for="callouts">Turn warning and note paragraphs into ReadMe callouts</label></div>
+          <div class="checkline"><input type="checkbox" id="frontmatter" checked>
+            <label for="frontmatter">Add YAML frontmatter (title, slug)</label></div>
+          <div class="checkline"><input type="checkbox" id="hidden" checked>
+            <label for="hidden">Mark pages hidden, so you can review before publishing</label></div>
+          <div class="checkline"><input type="checkbox" id="keepCover">
+            <label for="keepCover">Keep cover page, revision history and Word's table of contents</label></div>
+          <div class="grp" style="margin-top:11px">
+            <label class="fld" for="extraLabels">Additional repeated headings</label>
+            <input type="text" id="extraLabels" placeholder="Comma separated">
+            <div class="hint">Anything else your template repeats that should not
+              be treated as a section.</div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="body">
+        <div class="btnstack">
+          <button class="primary" id="convertBtn" disabled>Convert</button>
+          <button class="ghost wide" id="zipBtn" disabled>Download all as .zip</button>
+          <div class="status" id="status"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ main: preview + report ============ -->
+  <div class="main">
+    <div class="panel" id="empty">
+      <div class="empty">
+        <div class="lead">Drop a Word or PDF document to get started</div>
+        <div class="sub">Everything happens on this machine. Your files are never sent anywhere.</div>
+        <div class="cards">
+          <div class="c">
+            <span class="ic">⌨️</span>
+            <h3>Real code blocks</h3>
+            <p>Word has no code block. Indented monospace paragraphs become fenced
+               blocks with the language detected, so ReadMe highlights them and the
+               copy button works.</p>
+          </div>
+          <div class="c">
+            <span class="ic">🩹</span>
+            <h3>AutoCorrect repair</h3>
+            <p>Word rewrites straight quotes to curly ones as you type. Snippets look
+               fine in Word and fail when a developer pastes them. Fixed inside code.</p>
+          </div>
+          <div class="c">
+            <span class="ic">🗂️</span>
+            <h3>Clean structure</h3>
+            <p>Cover page, revision history and Word's table of contents dropped.
+               Heading levels remapped so ReadMe's own title and contents panel work.</p>
+          </div>
+          <div class="c">
+            <span class="ic">📋</span>
+            <h3>Tables, images, callouts</h3>
+            <p>Tables converted with merged cells expanded, body images extracted,
+               page logos skipped, and warning notes turned into ReadMe callouts.</p>
+          </div>
+          <div class="c">
+            <span class="ic">📄</span>
+            <h3>PDFs too</h3>
+            <p>A PDF stores glyphs at coordinates, not headings and tables, so those
+               are rebuilt from font sizes and layout. It works well on text PDFs and
+               needs a closer read than Word. Scanned pages need OCR first.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="results" hidden>
+      <div class="tabs" id="tabs"></div>
+      <pre class="md" id="preview"></pre>
+      <div class="resfoot">
+        <button class="ghost" id="copyBtn">Copy page</button>
+        <button class="ghost" id="dlOneBtn">Download page</button>
+      </div>
+    </div>
+
+    <div class="panel" id="reportPanel" hidden>
+      <h2>What changed</h2>
+      <div class="body"><div class="report" id="report"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  Needs a current browser (Chrome or Edge 103+, Firefox 113+, Safari 16.4+).
+  Output is Markdown you can paste into ReadMe, or a <code>.zip</code> whose
+  <code>docs/</code> folder drops into a ReadMe git-synced repository.
+  Converted pages reproduce your document faithfully — give them a skim before publishing. PDF sources are reconstructed from layout, so check those more closely.
+</div>
+
+<script src="pdf-extract.js"></script>
+<script src="converter.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
