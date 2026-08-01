@@ -15,6 +15,23 @@ $('picker').addEventListener('change', (e) => addFiles(e.target.files));
 drop.addEventListener('drop', (e) => addFiles(e.dataTransfer.files));
 
 /* ---- mode: word/pdf vs markdown ---- */
+// Single source of truth. The static HTML must match COPY.doc exactly; the
+// UI test asserts it, because the hero once still said "Word or PDF" long
+// after zips were supported.
+const COPY = {
+  doc: {
+    drop: 'Drop Word, PDF or a .zip here',
+    hint: 'A zip of folders keeps its structure',
+    hero: 'Drop a Word doc, PDF or .zip to get started',
+    sub:  'Everything happens on this machine. Your files are never sent anywhere.',
+  },
+  md: {
+    drop: 'Drop Markdown files or a .zip here',
+    hint: 'Or paste below',
+    hero: 'Drop, paste or zip up Markdown to clean it',
+    sub:  'Fixes heading levels, escapes MDX-unsafe tags, and normalises callouts. Nothing is uploaded.',
+  },
+};
 let inputMode = 'doc';
 function setMode(next) {
   inputMode = next;
@@ -23,16 +40,13 @@ function setMode(next) {
   $('modeMd').classList.toggle('on', md);
   $('modeDoc').setAttribute('aria-selected', String(!md));
   $('modeMd').setAttribute('aria-selected', String(md));
+  const copy = md ? COPY.md : COPY.doc;
   $('picker').accept = md ? '.md,.markdown,.mdx,.txt,.zip' : '.docx,.pdf,.zip';
-  $('dropTitle').textContent = md ? 'Drop Markdown files or a .zip here'
-                                 : 'Drop Word, PDF or a .zip here';
+  $('dropTitle').textContent = copy.drop;
+  $('dropHint').textContent = copy.hint;
   $('pasteBox').hidden = !md;
-  const hero = $('heroTitle'), sub = $('heroSub');
-  if (hero) hero.textContent = md ? 'Drop or paste Markdown to clean it up'
-                                  : 'Drop a Word or PDF document to get started';
-  if (sub) sub.textContent = md
-    ? 'Fixes heading levels, escapes MDX-unsafe tags, and normalises callouts. Nothing is uploaded.'
-    : 'Everything happens on this machine. Your files are never sent anywhere.';
+  if ($('heroTitle')) $('heroTitle').textContent = copy.hero;
+  if ($('heroSub')) $('heroSub').textContent = copy.sub;
 
   // Queued files belong to the mode they were added in — converting a .docx
   // as Markdown would just produce garbage. Drop the ones that no longer fit.
@@ -336,6 +350,14 @@ $('zipBtn').addEventListener('click', () => {
   download(docx2readme.makeZip(files), 'readme-docs.zip');
   setStatus('Downloaded readme-docs.zip — its docs/ folder drops straight into a ReadMe git-sync repo.');
 });
+
+/* ---- apply the copy table once at load ----
+   The static HTML carries the same strings so the page reads correctly before
+   JS runs, but this makes COPY authoritative: if the two ever drift, the
+   rendered page still matches the code. Must run after DOC_EXT/MD_EXT are
+   initialised, hence its position at the end of the file. */
+window.COPY = COPY;
+setMode(inputMode);
 
 /* ---- capability check ---- */
 if (typeof DecompressionStream === 'undefined') {
