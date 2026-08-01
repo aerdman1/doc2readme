@@ -19,7 +19,8 @@ import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ASSETS = ["styles.css", "preview.js", "pdf-extract.js", "converter.js", "app.js"]
+ASSETS = ["styles.css", "preview.js", "md-clean.js", "pdf-extract.js",
+          "converter.js", "app.js"]
 
 
 def digest(name):
@@ -27,7 +28,31 @@ def digest(name):
         return hashlib.sha256(fh.read()).hexdigest()[:8]
 
 
+SCRIPTS = ["preview.js", "md-clean.js", "pdf-extract.js", "converter.js", "app.js"]
+DECL = re.compile(r"^(?:const|let|var|function|async function|class)\s+([A-Za-z_$][\w$]*)",
+                  re.M)
+
+
+def check_globals():
+    """Classic scripts share one global scope, so two files declaring the same
+    top-level name is a SyntaxError and the *second* file silently never runs —
+    which presents as dead buttons, not as an error. This has bitten three
+    times (esc, mode, stripFrontmatter); fail the build instead."""
+    seen, clashes = {}, []
+    for name in SCRIPTS:
+        with open(os.path.join(HERE, name), encoding="utf-8") as fh:
+            for ident in DECL.findall(fh.read()):
+                if ident in seen:
+                    clashes.append("%s declared in both %s and %s" % (ident, seen[ident], name))
+                else:
+                    seen[ident] = name
+    if clashes:
+        sys.exit("global collisions would break the page:\n  " + "\n  ".join(clashes))
+    print("  %d top-level globals, no collisions" % len(seen))
+
+
 def main():
+    check_globals()
     path = os.path.join(HERE, "index.html")
     with open(path, encoding="utf-8") as fh:
         page = fh.read()

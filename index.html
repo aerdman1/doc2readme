@@ -4,8 +4,9 @@
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; worker-src 'self' blob:; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>doc2readme — Word &amp; PDF to ReadMe Markdown</title>
-<link rel="stylesheet" href="styles.css?v=49eea9dd">
+<meta name="color-scheme" content="dark">
+<title>doc2readme — Word, PDF &amp; Markdown to ReadMe</title>
+<link rel="stylesheet" href="styles.css?v=8914b8cd">
 </head>
 <body>
 
@@ -13,23 +14,70 @@
   <span class="brand"><svg class="rm-logo" role="img" aria-label="ReadMe" width="357" height="70" viewBox="0 0 357 70" fill="none" xmlns="http://www.w3.org/2000/svg"><mask id="mask0_1_2" mask-type="luminance" maskUnits="userSpaceOnUse" x="2" y="7" width="353" height="61"><path d="M354.1 7.5H2.5V67.5H354.1V7.5Z" fill="white"/></mask><g mask="url(#mask0_1_2)"><path d="M140.321 18.7197C129.26 18.7197 121.409 26.4988 121.409 37.346C121.409 48.6931 130.045 55.9009 141.034 55.9009C146.213 55.9009 153.035 54.2354 156.824 49.541C157.214 49.058 157.192 48.3619 156.75 47.9264L153.164 44.3959C152.71 43.9484 151.974 43.9353 151.521 44.3843C148.596 47.2826 144.863 48.4073 141.462 48.4073C136.181 48.4073 131.756 45.4813 131.186 39.5585H157.863C158.157 39.5585 158.413 39.3439 158.451 39.052C158.543 38.357 158.59 37.6351 158.59 36.7744C158.59 31.3514 156.663 26.9262 153.379 23.7156C150.169 20.5038 145.602 18.7197 140.321 18.7197ZM131.257 33.6347C131.9 28.8534 135.254 25.9275 140.107 25.9275C142.676 25.9275 144.888 26.7843 146.458 28.4257C147.671 29.7812 148.598 31.4941 148.884 33.6347H131.257Z" fill="currentColor"/><path d="M346.206 23.7159C342.996 20.5041 338.429 18.7197 333.148 18.7197C322.086 18.7197 314.236 26.4988 314.236 37.346C314.236 48.6931 322.872 55.9008 333.861 55.9008C339.04 55.9008 345.862 54.2353 349.651 49.5409C350.041 49.0577 350.019 48.3619 349.577 47.9263L345.991 44.3959C345.537 43.9484 344.801 43.9353 344.348 44.3842C341.423 47.2826 337.69 48.4072 334.289 48.4072C329.008 48.4072 324.584 45.4813 324.013 39.5584H350.69C350.984 39.5584 351.24 39.3438 351.279 39.0519C351.37 38.357 351.417 37.635 351.417 36.7746C351.417 31.3516 349.49 26.9265 346.206 23.7159ZM324.084 33.6344C324.727 28.8531 328.081 25.9271 332.934 25.9271C335.502 25.9271 337.715 26.784 339.284 28.4254C340.498 29.7809 341.425 31.4938 341.711 33.6344H324.084Z" fill="currentColor"/><path d="M203.217 47.7481C203.219 47.7327 203.218 47.717 203.22 47.7016H201.372V31.2717V20.9853C201.372 20.1677 200.709 19.505 199.892 19.505H194.418C193.601 19.505 192.938 20.168 192.938 20.9853V23.5609C189.799 20.5712 185.595 18.7197 180.748 18.7197C170.043 18.7197 162.55 26.7128 162.55 37.346C162.55 47.8359 169.973 55.9008 180.748 55.9008C186.242 55.9008 190.452 53.6169 193.45 50.1928V51.6344C193.45 53.5968 195.041 55.1873 197.003 55.1873H202.988C203.805 55.1873 204.468 54.5243 204.468 53.707V49.1824C204.468 48.4462 203.921 47.8624 203.217 47.7481ZM182.317 47.5512C176.466 47.5512 172.255 43.0546 172.255 37.3457C172.255 31.5653 176.466 27.0698 182.317 27.0698C187.598 27.0698 192.237 30.78 192.237 37.3457C192.237 43.8399 187.598 47.5512 182.317 47.5512Z" fill="currentColor"/><path d="M311.602 47.7019H308.936V33.992C308.936 24.8574 303.156 18.7197 294.306 18.7197C288.954 18.7197 284.815 20.9321 282.031 24.2157C279.606 20.7184 275.681 18.7197 270.614 18.7197C265.547 18.7197 261.779 20.8893 259.28 24.1151V20.9146C259.28 20.097 258.617 19.4344 257.8 19.4344H252.326C251.509 19.4344 250.846 20.097 250.846 20.9146V52.4131C250.846 53.9451 252.088 55.187 253.62 55.187H263.428C264.245 55.187 264.908 54.5243 264.908 53.7067V49.1821C264.908 48.3645 264.245 47.7019 263.428 47.7019H260.766V34.7774C260.766 30.1385 263.762 27.2123 268.116 27.2123C272.398 27.2123 274.896 30.1383 274.896 34.7774V52.4131C274.896 53.9451 276.137 55.187 277.669 55.187H286.438C287.252 55.187 287.912 54.5275 287.912 53.7137V49.1749C287.912 48.3613 287.252 47.7016 286.438 47.7016H284.815V34.7771C284.815 30.1383 287.884 27.212 292.165 27.212C296.447 27.212 299.017 30.138 299.017 34.7771V47.7016L299.021 51.4009V52.4128C299.021 53.9448 300.263 55.1867 301.795 55.1867H311.602C312.42 55.1867 313.083 54.524 313.083 53.7064V49.1818C313.083 48.3642 312.42 47.7019 311.602 47.7019Z" fill="currentColor"/><path d="M241.732 7.50641H233.756C232.939 7.50641 232.276 8.16935 232.276 8.98669V13.5113C232.276 14.3289 232.939 14.9915 233.756 14.9915H234.179C234.178 14.9942 234.179 14.9968 234.178 14.9997H235.366V22.2886C232.44 20.0761 228.801 18.7194 224.661 18.7194C213.957 18.7194 206.464 26.7125 206.464 37.3458C206.464 47.8357 213.886 55.9006 224.661 55.9006C229.854 55.9006 233.886 53.8469 236.844 50.7325V53.7065C236.844 54.5241 237.507 55.1868 238.324 55.1868H243.798C244.615 55.1868 245.278 54.5241 245.278 53.7065V48.7318C245.28 48.7318 245.282 48.7306 245.285 48.7303V11.0593C245.285 9.09689 243.694 7.50641 241.732 7.50641ZM226.232 47.5516C220.38 47.5516 216.17 43.0549 216.17 37.3461C216.17 31.5657 220.38 27.0702 226.232 27.0702C231.513 27.0702 236.15 30.7803 236.15 37.3461C236.15 43.8403 231.513 47.5516 226.232 47.5516Z" fill="currentColor"/><path d="M68.0574 16.0897H50.7348C44.6488 16.0897 39.5663 20.3509 38.2846 26.0498C37.0032 20.3509 31.9209 16.0897 25.8347 16.0897H8.51213C5.1916 16.0897 2.5 18.7813 2.5 22.1015V52.582C2.5 55.9026 5.1916 58.5942 8.51213 58.5942H20.0066C31.9945 58.6309 35.9256 61.4463 37.82 67.1996C37.8979 67.3773 38.0785 67.5064 38.2849 67.5064C38.4922 67.5064 38.6719 67.3787 38.7492 67.1996C40.643 61.4463 44.5744 58.6311 56.562 58.5944C56.5617 58.5944 56.5623 58.5944 56.562 58.5944L68.0577 58.5942C71.3782 58.5942 74.0698 55.9026 74.0698 52.582V22.1015C74.0698 18.7813 71.3779 16.0897 68.0574 16.0897ZM32.5304 48.7405C32.5304 49.0949 32.2431 49.3822 31.8887 49.3822H12.3098C11.9554 49.3822 11.6681 49.0949 11.6681 48.7405V46.3039C11.6681 45.9494 11.9554 45.6621 12.3098 45.6621H31.8887C32.2431 45.6621 32.5304 45.9494 32.5304 46.3039V48.7405ZM32.5304 41.1565C32.5304 41.5109 32.2431 41.7982 31.8887 41.7982H12.3098C11.9554 41.7982 11.6681 41.5109 11.6681 41.1565V38.7199C11.6681 38.3654 11.9554 38.0781 12.3098 38.0781H31.8887C32.2431 38.0781 32.5304 38.3654 32.5304 38.7199V41.1565ZM32.5304 33.5725C32.5304 33.9269 32.2431 34.2142 31.8887 34.2142H12.3098C11.9554 34.2142 11.6681 33.9269 11.6681 33.5725V31.1359C11.6681 30.7814 11.9554 30.4942 12.3098 30.4942H31.8887C32.2431 30.4942 32.5304 30.7814 32.5304 31.1359V33.5725ZM64.9011 48.7405C64.9011 49.0949 64.6139 49.3822 64.2594 49.3822H44.6811C44.3267 49.3822 44.0394 49.0949 44.0394 48.7405V46.3039C44.0394 45.9494 44.3267 45.6621 44.6811 45.6621H64.2594C64.6139 45.6621 64.9011 45.9494 64.9011 46.3039V48.7405ZM64.9011 41.1565C64.9011 41.5109 64.6139 41.7982 64.2594 41.7982H44.6811C44.3267 41.7982 44.0394 41.5109 44.0394 41.1565V38.7199C44.0394 38.3654 44.3267 38.0781 44.6811 38.0781H64.2594C64.6139 38.0781 64.9011 38.3654 64.9011 38.7199V41.1565ZM64.9011 33.5725C64.9011 33.9269 64.6139 34.2142 64.2594 34.2142H44.6811C44.3267 34.2142 44.0394 33.9269 44.0394 33.5725V31.1359C44.0394 30.7814 44.3267 30.4942 44.6811 30.4942H64.2594C64.6139 30.4942 64.9011 30.7814 64.9011 31.1359V33.5725Z" fill="#012AFF"/><path d="M122.886 20.5593C121.726 19.7781 119 18.4597 114.045 18.7197C109.554 18.9552 106.051 21.0754 103.697 24.8574V24.1439C103.697 24.1343 103.695 24.1267 103.695 24.1174V23.0567C103.695 21.0943 102.105 19.5036 100.142 19.5036H92.4039C91.5863 19.5036 90.9236 20.1662 90.9236 20.9839V25.6591C90.9236 26.4767 91.5866 27.1393 92.4039 27.1393H93.7684L93.1924 27.1402H93.9897L93.9915 27.1408H95.6314V47.7016H92.9726C92.1628 47.7016 91.5066 48.3581 91.5066 49.1676V53.721C91.5066 54.5305 92.1628 55.1867 92.9723 55.1867H108.204C109.013 55.1867 109.669 54.5305 109.669 53.7213V49.1673C109.669 48.3578 109.013 47.7016 108.204 47.7016H105.551V35.9905C105.551 30.9943 108.483 27.5947 113.187 27.3557C115.376 27.2443 116.925 27.579 117.874 27.8991C118.139 27.9884 118.415 27.8537 118.532 27.6005C119.62 25.2435 121.113 23.1626 122.943 21.4136C123.2 21.1679 123.18 20.7582 122.885 20.5596L122.886 20.5593Z" fill="currentColor"/></g></svg></span>
   <span class="divider"></span>
   <h1>doc2readme</h1>
-  <span class="tag">Word &amp; PDF&nbsp;→&nbsp;Markdown</span>
+  <span class="tag">Word, PDF &amp; Markdown&nbsp;&rarr;&nbsp;ReadMe</span>
   <span class="spacer"></span>
   <span class="pill"><span class="dot"></span>Runs entirely in your browser — nothing is uploaded</span>
 </div>
 
 <div class="shell">
 
-  <!-- ============ sidebar: input + controls ============ -->
   <div class="side">
     <div class="panel">
       <h2>Documents</h2>
       <div class="body">
+        <div class="modes" role="tablist">
+          <button id="modeDoc" class="on" role="tab" aria-selected="true">Word &amp; PDF</button>
+          <button id="modeMd" role="tab" aria-selected="false">Markdown</button>
+        </div>
         <div class="drop" id="drop">
-          <strong>Drop Word or PDF files here</strong>
+          <svg class="art" viewBox="22 22 216 172" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <linearGradient id="gw" x1=".1" y1="0" x2=".9" y2="1">
+      <stop offset="0" stop-color="#4b8ef8"/><stop offset="1" stop-color="#2a5fd0"/>
+    </linearGradient>
+    <linearGradient id="gp" x1=".1" y1="0" x2=".9" y2="1">
+      <stop offset="0" stop-color="#f2635f"/><stop offset="1" stop-color="#c8332f"/>
+    </linearGradient>
+    <linearGradient id="gt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1d2a3a"/><stop offset="1" stop-color="#111a26"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#2f7cf6" stop-opacity=".30"/>
+      <stop offset="1" stop-color="#2f7cf6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="130" cy="104" rx="118" ry="96" fill="url(#glow)"/>
+  <g fill="#8fb6f5">
+    <path d="M40 44l2.2 5.4L48 51l-5.8 1.6L40 58l-2.2-5.4L32 51l5.8-1.6z" opacity=".7"/>
+    <path d="M226 66l1.8 4.4 4.6 1.3-4.6 1.3-1.8 4.4-1.8-4.4-4.6-1.3 4.6-1.3z" opacity=".55"/>
+    <path d="M206 30l1.5 3.7 3.9 1.1-3.9 1.1-1.5 3.7-1.5-3.7-3.9-1.1 3.9-1.1z" opacity=".45"/>
+    <circle cx="60" cy="128" r="2.4" opacity=".4"/><circle cx="214" cy="140" r="2" opacity=".35"/>
+    <circle cx="30" cy="92" r="1.8" opacity=".3"/>
+  </g>
+  <g transform="rotate(-13 96 86)">
+    <rect x="70" y="44" width="60" height="80" rx="8" fill="url(#gw)"/>
+    <rect x="70.75" y="44.75" width="58.5" height="78.5" rx="7.25" stroke="#fff" stroke-opacity=".22" fill="none"/>
+    <text x="100" y="94" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif"
+          font-size="27" font-weight="700" fill="#fff">W</text>
+  </g>
+  <g transform="rotate(11 166 88)">
+    <rect x="136" y="46" width="60" height="80" rx="8" fill="url(#gp)"/>
+    <rect x="136.75" y="46.75" width="58.5" height="78.5" rx="7.25" stroke="#fff" stroke-opacity=".22" fill="none"/>
+    <text x="166" y="94" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif"
+          font-size="19" font-weight="700" fill="#fff">PDF</text>
+  </g>
+  <path d="M52 128h156a10 10 0 0 1 10 10v26a14 14 0 0 1-14 14H56a14 14 0 0 1-14-14v-26a10 10 0 0 1 10-10z"
+        fill="url(#gt)" stroke="#2a3a4e"/>
+  <path d="M42 146h56a12 12 0 0 0 12 12h40a12 12 0 0 0 12-12h56" stroke="#33475f" stroke-width="1.5" fill="none"/>
+  <circle cx="130" cy="140" r="21" fill="#2f7cf6"/>
+  <circle cx="130" cy="140" r="21" stroke="#8dbaff" stroke-opacity=".45" fill="none"/>
+  <path d="M130 131v18M122 139l8-8 8 8" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+          <strong id="dropTitle">Drop Word or PDF files here</strong>
           <span class="sm">or click to browse</span>
           <input type="file" id="picker" accept=".docx,.pdf" multiple hidden>
         </div>
+        <textarea id="pasteBox" hidden placeholder="…or paste Markdown here to clean it up"></textarea>
         <ul class="files" id="fileList" hidden></ul>
       </div>
     </div>
@@ -39,55 +87,29 @@
       <div class="body">
         <div class="grp">
           <label class="fld" for="category">Category folder</label>
-          <input type="text" id="category" placeholder="Optional — e.g. API Guides">
+          <div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
+            <input type="text" id="category" placeholder="Optional — e.g. API Guides"></div>
           <div class="hint">Becomes a ReadMe category when you import the output.</div>
         </div>
-
-        <div class="grp">
-          <label class="fld" for="split">Page splitting</label>
-          <select id="split">
-            <option value="0" selected>One page per document</option>
-            <option value="1">Split at top-level headings</option>
-            <option value="2">Split at second-level headings</option>
-          </select>
-        </div>
-
-        <div class="grp">
-          <label class="fld" for="maxLevel">Heading depth</label>
-          <select id="maxLevel">
-            <option value="3" selected>Up to H3 (recommended)</option>
-            <option value="4">Up to H4</option>
-            <option value="6">Keep every Word level</option>
-          </select>
-          <div class="hint">ReadMe's page contents panel stops at H3.</div>
-        </div>
-
-        <div class="grp">
-          <label class="fld" for="labelStyle">Repeated headings</label>
-          <select id="labelStyle">
-            <option value="bold" selected>Turn into bold text</option>
-            <option value="plain">Turn into plain text</option>
-            <option value="keep">Leave as headings</option>
-          </select>
-          <div class="hint">Reference docs repeat the same headings under every
-            endpoint. Left alone they crowd out the real sections in the contents panel.</div>
-        </div>
-
+        <div class="grp"><label class="fld" for="split">Page splitting</label><div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M8 12h12M8 18h12M4 12v6"/></svg></span><select id="split"><option value="0" selected>One page per document</option><option value="1">Split at top-level headings</option><option value="2">Split at second-level headings</option></select><span class="caret"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div></div>
+        <div class="grp"><label class="fld" for="maxLevel">Heading depth</label><div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h11M4 18h7"/></svg></span><select id="maxLevel"><option value="3" selected>Up to H3 (recommended)</option><option value="4">Up to H4</option><option value="6">Keep every level</option></select><span class="caret"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div><div class="hint">ReadMe's page contents panel stops at H3.</div></div>
+        <div class="grp"><label class="fld" for="labelStyle">Repeated headings</label><div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span><select id="labelStyle"><option value="bold" selected>Turn into bold text</option><option value="plain">Turn into plain text</option><option value="keep">Leave as headings</option></select><span class="caret"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div><div class="hint">Reference docs repeat the same headings under every endpoint. Left alone they crowd out the real sections in the contents panel.</div></div>
+        <div class="grp"><label class="fld" for="calloutStyle">Callout style</label><div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span><select id="calloutStyle"><option value="component" selected>ReadMe &lt;Callout&gt; component</option><option value="blockquote">Blockquote with emoji</option><option value="plain">Plain paragraph</option></select><span class="caret"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div><div class="hint">The component form is what most ReadMe projects use.</div></div>
         <details class="more">
           <summary>Advanced</summary>
           <div class="checkline"><input type="checkbox" id="callouts" checked>
-            <label for="callouts">Turn warning and note paragraphs into ReadMe callouts</label></div>
+            <label for="callouts">Turn warning and note paragraphs into callouts</label></div>
           <div class="checkline"><input type="checkbox" id="frontmatter" checked>
             <label for="frontmatter">Add YAML frontmatter (title, slug)</label></div>
           <div class="checkline"><input type="checkbox" id="hidden" checked>
             <label for="hidden">Mark pages hidden, so you can review before publishing</label></div>
           <div class="checkline"><input type="checkbox" id="keepCover">
-            <label for="keepCover">Keep cover page, revision history and Word's table of contents</label></div>
+            <label for="keepCover">Keep cover page, revision history and table of contents</label></div>
           <div class="grp spaced">
             <label class="fld" for="extraLabels">Additional repeated headings</label>
-            <input type="text" id="extraLabels" placeholder="Comma separated">
-            <div class="hint">Anything else your template repeats that should not
-              be treated as a section.</div>
+            <div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
+              <input type="text" id="extraLabels" placeholder="Comma separated"></div>
+            <div class="hint">Anything else your template repeats that should not be a section.</div>
           </div>
         </details>
       </div>
@@ -96,67 +118,100 @@
     <div class="panel">
       <div class="body">
         <div class="btnstack">
-          <button class="primary" id="convertBtn" disabled>Convert</button>
-          <button class="ghost wide" id="zipBtn" disabled>Download all as .zip</button>
+          <button class="primary" id="convertBtn" disabled><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6.3 6.3l2.8 2.8M14.9 14.9l2.8 2.8M17.7 6.3l-2.8 2.8M9.1 14.9l-2.8 2.8"/></svg>Convert</button>
+          <button class="ghost wide" id="zipBtn" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v13M7 12l5 5 5-5M4 21h16"/></svg>Download all as .zip</button>
           <div class="status" id="status"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ============ main: preview + report ============ -->
   <div class="main">
-    <div class="panel" id="empty">
-      <div class="empty">
-        <div class="lead">Drop a Word or PDF document to get started</div>
-        <div class="sub">Everything happens on this machine. Your files are never sent anywhere.</div>
-        <div class="cards">
-          <div class="c">
-            <span class="ic">⌨️</span>
-            <h3>Real code blocks</h3>
-            <p>Word has no code block. Indented monospace paragraphs become fenced
-               blocks with the language detected, so ReadMe highlights them and the
-               copy button works.</p>
-          </div>
-          <div class="c">
-            <span class="ic">🩹</span>
-            <h3>AutoCorrect repair</h3>
-            <p>Word rewrites straight quotes to curly ones as you type. Snippets look
-               fine in Word and fail when a developer pastes them. Fixed inside code.</p>
-          </div>
-          <div class="c">
-            <span class="ic">🗂️</span>
-            <h3>Clean structure</h3>
-            <p>Cover page, revision history and Word's table of contents dropped.
-               Heading levels remapped so ReadMe's own title and contents panel work.</p>
-          </div>
-          <div class="c">
-            <span class="ic">📋</span>
-            <h3>Tables, images, callouts</h3>
-            <p>Tables converted with merged cells expanded, body images extracted,
-               page logos skipped, and warning notes turned into ReadMe callouts.</p>
-          </div>
-          <div class="c">
-            <span class="ic">📄</span>
-            <h3>PDFs too</h3>
-            <p>A PDF stores glyphs at coordinates, not headings and tables, so those
-               are rebuilt from font sizes and layout. It works well on text PDFs and
-               needs a closer read than Word. Scanned pages need OCR first.</p>
+    <div id="empty">
+      <div class="hero">
+        <svg class="art" viewBox="0 0 260 210" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <linearGradient id="gw" x1=".1" y1="0" x2=".9" y2="1">
+      <stop offset="0" stop-color="#4b8ef8"/><stop offset="1" stop-color="#2a5fd0"/>
+    </linearGradient>
+    <linearGradient id="gp" x1=".1" y1="0" x2=".9" y2="1">
+      <stop offset="0" stop-color="#f2635f"/><stop offset="1" stop-color="#c8332f"/>
+    </linearGradient>
+    <linearGradient id="gt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1d2a3a"/><stop offset="1" stop-color="#111a26"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#2f7cf6" stop-opacity=".30"/>
+      <stop offset="1" stop-color="#2f7cf6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="130" cy="104" rx="118" ry="96" fill="url(#glow)"/>
+  <g fill="#8fb6f5">
+    <path d="M40 44l2.2 5.4L48 51l-5.8 1.6L40 58l-2.2-5.4L32 51l5.8-1.6z" opacity=".7"/>
+    <path d="M226 66l1.8 4.4 4.6 1.3-4.6 1.3-1.8 4.4-1.8-4.4-4.6-1.3 4.6-1.3z" opacity=".55"/>
+    <path d="M206 30l1.5 3.7 3.9 1.1-3.9 1.1-1.5 3.7-1.5-3.7-3.9-1.1 3.9-1.1z" opacity=".45"/>
+    <circle cx="60" cy="128" r="2.4" opacity=".4"/><circle cx="214" cy="140" r="2" opacity=".35"/>
+    <circle cx="30" cy="92" r="1.8" opacity=".3"/>
+  </g>
+  <g transform="rotate(-13 96 86)">
+    <rect x="70" y="44" width="60" height="80" rx="8" fill="url(#gw)"/>
+    <rect x="70.75" y="44.75" width="58.5" height="78.5" rx="7.25" stroke="#fff" stroke-opacity=".22" fill="none"/>
+    <text x="100" y="94" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif"
+          font-size="27" font-weight="700" fill="#fff">W</text>
+  </g>
+  <g transform="rotate(11 166 88)">
+    <rect x="136" y="46" width="60" height="80" rx="8" fill="url(#gp)"/>
+    <rect x="136.75" y="46.75" width="58.5" height="78.5" rx="7.25" stroke="#fff" stroke-opacity=".22" fill="none"/>
+    <text x="166" y="94" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif"
+          font-size="19" font-weight="700" fill="#fff">PDF</text>
+  </g>
+  <path d="M52 128h156a10 10 0 0 1 10 10v26a14 14 0 0 1-14 14H56a14 14 0 0 1-14-14v-26a10 10 0 0 1 10-10z"
+        fill="url(#gt)" stroke="#2a3a4e"/>
+  <path d="M42 146h56a12 12 0 0 0 12 12h40a12 12 0 0 0 12-12h56" stroke="#33475f" stroke-width="1.5" fill="none"/>
+  <circle cx="130" cy="140" r="21" fill="#2f7cf6"/>
+  <circle cx="130" cy="140" r="21" stroke="#8dbaff" stroke-opacity=".45" fill="none"/>
+  <path d="M130 131v18M122 139l8-8 8 8" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+        <div>
+          <h2 id="heroTitle">Drop a Word or PDF document to get started</h2>
+          <p id="heroSub">Everything happens on this machine. Your files are never sent anywhere.</p>
+          <div class="chips">
+            <span class="chip"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>100% Private</span>
+            <span class="chip"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>Instant Processing</span>
+            <span class="chip"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/></svg>No Uploads</span>
           </div>
         </div>
+      </div>
+      <div class="cards">
+        <div class="card"><div class="ic b"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18-6-6 6-6M15 6l6 6-6 6"/></svg></div>
+          <h3>Real code blocks</h3>
+          <p>Word has no code block. Indented monospace paragraphs become fenced blocks with the
+             language detected, so ReadMe highlights them and the copy button works.</p></div>
+        <div class="card"><div class="ic p"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 20 12-12M15 4l1.5 3L20 8.5 16.5 10 15 13.5 13.5 10 10 8.5 13.5 7z"/></svg></div>
+          <h3>AutoCorrect repair</h3>
+          <p>Word rewrites straight quotes to curly ones as you type. Snippets look fine in Word and
+             fail when a developer pastes them. Fixed inside code.</p></div>
+        <div class="card"><div class="ic t"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M6.5 16.8 11 12.4M17.5 16.8 13 12.4"/></svg></div>
+          <h3>Clean structure</h3>
+          <p>Cover page, revision history and table of contents dropped. Heading levels remapped so
+             ReadMe's own title and contents panel work.</p></div>
+        <div class="card"><div class="ic o"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg></div>
+          <h3>Tables, images, callouts</h3>
+          <p>Tables converted with merged cells expanded, body images extracted, page logos skipped,
+             and warning notes turned into ReadMe callouts.</p></div>
+        <div class="card"><div class="ic r"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg></div>
+          <h3>PDFs and Markdown too</h3>
+          <p>A PDF stores glyphs at coordinates, so structure is rebuilt from font sizes and layout.
+             Existing Markdown gets cleaned and made MDX-safe.</p></div>
       </div>
     </div>
 
     <div class="banner" id="imgBanner" hidden>
-      <span class="bi">🖼️</span>
-      <div>
-        <strong>Images aren't uploaded for you.</strong>
-        This page can't reach ReadMe, so extracted images are written into the
-        <code>images/</code> folder of the .zip and referenced by relative path.
-        Upload them to ReadMe (or any host) and replace those paths with the
-        full URLs. Images that were already full URLs in your document are left
-        untouched and will keep working.
-      </div>
+      <span class="bi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 16-5-5-9 9"/></svg></span>
+      <div><strong>Images aren't uploaded for you.</strong> This page can't reach ReadMe, so extracted
+        images are written into the <code>images/</code> folder of the .zip and referenced by relative
+        path. Upload them to ReadMe (or any host) and replace those paths with the full URLs. Images
+        that were already full URLs in your document are left untouched and will keep working.</div>
     </div>
 
     <div class="panel" id="results" hidden>
@@ -173,6 +228,11 @@
       <h2>What changed</h2>
       <div class="body"><div class="report" id="report"></div></div>
     </div>
+
+    <div class="note"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><div>Needs a current browser (Chrome or Edge 103+, Firefox 113+,
+      Safari 16.4+). Output is Markdown you can paste into ReadMe, or a <code>.zip</code> whose
+      <code>docs/</code> folder drops into a ReadMe git-synced repository. Converted pages reproduce
+      your document faithfully — give them a skim before publishing.</div></div>
   </div>
 </div>
 
@@ -188,16 +248,10 @@
   </div>
 </div>
 
-<div class="note">
-  Needs a current browser (Chrome or Edge 103+, Firefox 113+, Safari 16.4+).
-  Output is Markdown you can paste into ReadMe, or a <code>.zip</code> whose
-  <code>docs/</code> folder drops into a ReadMe git-synced repository.
-  Converted pages reproduce your document faithfully — give them a skim before publishing. PDF sources are reconstructed from layout, so check those more closely.
-</div>
-
 <script src="preview.js?v=ff68d3de"></script>
-<script src="pdf-extract.js?v=17bde528"></script>
-<script src="converter.js?v=0c819701"></script>
-<script src="app.js?v=4cf11c93"></script>
+<script src="md-clean.js?v=e11dbd15"></script>
+<script src="pdf-extract.js?v=bcc01aa2"></script>
+<script src="converter.js?v=7c13d648"></script>
+<script src="app.js?v=f55d8f82"></script>
 </body>
 </html>

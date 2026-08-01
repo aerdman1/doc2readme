@@ -1,5 +1,5 @@
 const $ = (id) => document.getElementById(id);
-let picked = [];      // {name, buffer}
+let picked = [];      // {name, buffer}   (reassigned on mode switch)
 let converted = [];   // {path, text?, data?}
 let reports = [];
 let active = 0;
@@ -14,19 +14,67 @@ $('picker').addEventListener('change', (e) => addFiles(e.target.files));
   drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('hover'); }));
 drop.addEventListener('drop', (e) => addFiles(e.dataTransfer.files));
 
+/* ---- mode: word/pdf vs markdown ---- */
+let inputMode = 'doc';
+function setMode(next) {
+  inputMode = next;
+  const md = inputMode === 'md';
+  $('modeDoc').classList.toggle('on', !md);
+  $('modeMd').classList.toggle('on', md);
+  $('modeDoc').setAttribute('aria-selected', String(!md));
+  $('modeMd').setAttribute('aria-selected', String(md));
+  $('picker').accept = md ? '.md,.markdown,.mdx,.txt' : '.docx,.pdf';
+  $('dropTitle').textContent = md ? 'Drop Markdown files here' : 'Drop Word or PDF files here';
+  $('pasteBox').hidden = !md;
+  const hero = $('heroTitle'), sub = $('heroSub');
+  if (hero) hero.textContent = md ? 'Drop or paste Markdown to clean it up'
+                                  : 'Drop a Word or PDF document to get started';
+  if (sub) sub.textContent = md
+    ? 'Fixes heading levels, escapes MDX-unsafe tags, and normalises callouts. Nothing is uploaded.'
+    : 'Everything happens on this machine. Your files are never sent anywhere.';
+
+  // Queued files belong to the mode they were added in — converting a .docx
+  // as Markdown would just produce garbage. Drop the ones that no longer fit.
+  const keep = md ? MD_EXT : DOC_EXT;
+  const dropped = picked.filter((p) => !keep.test(p.name));
+  if (dropped.length) {
+    picked = picked.filter((p) => keep.test(p.name));
+    setStatus(dropped.length + ' file(s) removed — they do not belong to this mode.');
+  }
+  renderFiles();
+}
+$('modeDoc').addEventListener('click', () => setMode('doc'));
+$('modeMd').addEventListener('click', () => setMode('md'));
+$('pasteBox').addEventListener('input', refreshConvertEnabled);
+
+function pastedMarkdown() {
+  return inputMode === 'md' ? $('pasteBox').value.trim() : '';
+}
+function refreshConvertEnabled() {
+  $('convertBtn').disabled = !picked.length && !pastedMarkdown();
+}
+
+const DOC_EXT = /\.(docx|pdf)$/i;
+const MD_EXT = /\.(md|markdown|mdx|txt)$/i;
+
 async function addFiles(list) {
   // Read everything first, then dedupe and commit in one synchronous pass.
   // Checking `picked` before an await lets two overlapping drops of the same
   // file both pass the check and add it twice.
   const incoming = [];
   for (const f of list) {
-    if (!/\.(docx|pdf)$/i.test(f.name)) {
-      if (/\.(doc|docm|rtf|odt|pages)$/i.test(f.name)) {
-        setStatus(f.name + ' — save it as .docx or PDF first, then drop it back in.', true);
+    const wanted = inputMode === 'md' ? MD_EXT : DOC_EXT;
+    if (!wanted.test(f.name)) {
+      // Dropping the other kind is an easy mistake; switch rather than refuse.
+      if (inputMode === 'doc' && MD_EXT.test(f.name)) { setMode('md'); }
+      else if (inputMode === 'md' && DOC_EXT.test(f.name)) { setMode('doc'); }
+      else if (/\.(doc|docm|rtf|odt|pages)$/i.test(f.name)) {
+        setStatus(f.name + ' — save it as .docx, PDF or Markdown first.', true);
+        continue;
       } else {
-        setStatus(f.name + ' — only .docx and .pdf files can be converted.', true);
+        setStatus(f.name + ' — needs to be .docx, .pdf or .md.', true);
+        continue;
       }
-      continue;
     }
     incoming.push({ name: f.name, buffer: await f.arrayBuffer() });
   }
@@ -52,7 +100,7 @@ function renderFiles() {
     li.append(span, btn);
     ul.append(li);
   });
-  $('convertBtn').disabled = !picked.length;
+  refreshConvertEnabled();
 }
 
 function setStatus(msg, isErr) {
@@ -71,6 +119,8 @@ function gatherOptions() {
   o.labelStyle = ls === 'plain' ? 'plain' : 'bold';
   if (ls === 'keep') o.labels = new Set();
   o.noCallouts = !$('callouts').checked;
+  o.calloutStyle = $('calloutStyle').value;
+  o.forceMarkdown = inputMode === 'md';
   o.noFrontmatter = !$('frontmatter').checked;
   o.hidden = $('hidden').checked;
   o.keepCover = $('keepCover').checked;
@@ -104,7 +154,13 @@ $('convertBtn').addEventListener('click', async () => {
     return out;
   };
 
-  for (const p of picked) {
+  const jobs = picked.slice();
+  const pasted = pastedMarkdown();
+  if (pasted) {
+    jobs.push({ name: 'pasted.md', buffer: new TextEncoder().encode(pasted).buffer });
+  }
+
+  for (const p of jobs) {
     try {
       const { files, report } = await docx2readme.convertDocument(p.buffer, p.name, opts);
       for (const f of files) {
@@ -122,7 +178,7 @@ $('convertBtn').addEventListener('click', async () => {
     }
   }
 
-  $('convertBtn').disabled = false;
+  refreshConvertEnabled();
   const pages = converted.filter((f) => f.text !== undefined && f.path.endsWith('.md'));
   const failed = reports.filter((r) => r.error).length;
   setStatus(pages.length + ' page(s) from ' + (reports.length - failed) + ' document(s)' +
@@ -183,12 +239,21 @@ function renderResults() {
     if (r.images) bits.push(r.images + ' image(s) extracted');
     if (r.emptyHeadings) bits.push(r.emptyHeadings + ' empty heading(s) dropped');
     if (r.pdfPages) bits.unshift(r.pdfPages + ' PDF page(s) read');
+    if (r.mdCodeBlocks) bits.push(r.mdCodeBlocks + ' code block(s) preserved');
+    if (r.mdTables) bits.push(r.mdTables + ' table(s) parsed');
     if (r.pdfTables) bits.push(r.pdfTables + ' table(s) reconstructed');
     if (bits.length) add(escHtml(bits.join(', ')));
     if (r.autocorrectFixes) {
       add('<span class="warn">Repaired ' + r.autocorrectFixes +
           ' Word AutoCorrect character(s) inside code blocks — those snippets would have failed when copied.</span>');
     }
+    if (r.mdEscapedTags) {
+      add('<span class="warn">Escaped ' + r.mdEscapedTags + ' angle-bracket placeholder(s) '
+        + 'such as &lt;YOUR_TOKEN&gt; — unescaped, MDX reads those as JSX tags and the page '
+        + 'fails to build.</span>');
+    }
+    if (r.mdSelfClosed) add('Closed ' + r.mdSelfClosed + ' void HTML tag(s) (&lt;br&gt; → &lt;br /&gt;) for MDX');
+    if (r.mdFrontmatter) add('Existing frontmatter read: ' + escHtml(r.mdFrontmatter.join(', ')));
     if (r.kind === 'pdf') {
       add('<span class="warn">PDF source — headings, tables and code '
         + 'blocks were inferred from font size and layout, because a PDF does not '
@@ -265,7 +330,7 @@ function openPreview() {
   const f = converted.filter((x) => x.text !== undefined)[active];
   if (!f) return;
   $('previewTitle').textContent = 'Preview — ' + f.path;
-  $('previewBody').innerHTML = readmePreview.render(stripFrontmatter(f.text));
+  $('previewBody').innerHTML = readmePreview.render(stripPageFrontmatter(f.text));
   $('previewModal').hidden = false;
   document.body.style.overflow = 'hidden';
 }
@@ -273,7 +338,7 @@ function closePreview() {
   $('previewModal').hidden = true;
   document.body.style.overflow = '';
 }
-function stripFrontmatter(t) {
+function stripPageFrontmatter(t) {
   return t.replace(/^---\n[\s\S]*?\n---\n+/, '');
 }
 $('previewBtn').addEventListener('click', openPreview);

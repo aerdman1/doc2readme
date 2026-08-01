@@ -1,11 +1,13 @@
 # doc2readme
 
-**Turn Word documents and PDFs into ReadMe-ready Markdown, right in your browser.**
+**Turn Word documents, PDFs and existing Markdown into ReadMe-ready Markdown,
+right in your browser.**
 
 ### → [Open the converter](https://aerdman1.github.io/doc2readme/)
 
-Drop in a `.docx` or `.pdf`. Get back clean Markdown you can paste straight
-into ReadMe — or a `.zip` that drops into a ReadMe git-synced repository.
+Drop in a `.docx`, a `.pdf`, or Markdown you already have. Get back clean
+Markdown you can paste straight into ReadMe — or a `.zip` that drops into a
+ReadMe git-synced repository.
 
 ---
 
@@ -69,6 +71,26 @@ can see exactly what it did rather than diffing by hand.
 
 ---
 
+## Already have Markdown?
+
+Switch to the **Markdown** tab and drop `.md` files in, or paste straight into
+the box.
+
+This is worth doing even when the Markdown looks fine. ReadMe builds pages as
+MDX, and Markdown written for GitHub is full of things MDX rejects — the most
+common being placeholders like `<YOUR_API_KEY>` in body text, which MDX reads
+as a JSX tag and refuses to build. Running it through here:
+
+- escapes stray angle-bracket placeholders, while leaving real components,
+  code blocks and code spans untouched
+- closes void tags (`<br>` → `<br />`), which MDX also requires
+- normalises callouts — both blockquote-with-emoji and `<Callout>` — into one
+  consistent form
+- fixes heading levels and repeated headings the same way it does for Word
+- keeps existing frontmatter
+
+---
+
 ## Images need one manual step
 
 The page has no network access — that is the whole privacy guarantee — so it
@@ -107,6 +129,8 @@ OCR before anything can convert them, and the page will tell you so.
 - Text boxes, SmartArt, charts and equations aren't extracted. They'll be
   *missing* rather than garbled.
 - `.doc` and `.docm` need to be resaved as `.docx` first (Word: File → Save As).
+- Callouts are emitted as ReadMe `<Callout>` components by default, which is
+  what most ReadMe projects use. Settings can switch to blockquote or plain.
 
 ---
 
