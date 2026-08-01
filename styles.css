@@ -11,7 +11,7 @@
   --text:      #e9eff7;
   --text-dim:  #b6c3d2;
   --muted:     #7d8ea3;
-  --faint:     #5d6c7e;
+  --faint:     #74849a;   /* 4.9:1 on panel bg — hints are 11.5px, so AA needs 4.5 */
   --accent:    #2f7cf6;
   --accent-2:  #4d93ff;
   --ok:        #3ddc97;
@@ -115,7 +115,7 @@ body {
 }
 .drop:hover { border-color: rgba(47,124,246,.5); background: rgba(47,124,246,.05); }
 .drop.hover { border-color: var(--accent); background: rgba(47,124,246,.1); }
-.drop .art { width: 116px; height: 92px; margin: 0 auto 12px; display: block; }
+.drop .art { width: 72px; height: 56px; margin: 0 auto 13px; display: block; }
 .drop strong { display: block; color: var(--text); font-size: 14px; font-weight: 650; }
 .drop .sm { font-size: 12.5px; color: var(--accent-2); }
 .drop .subtle { display: block; font-size: 11.5px; color: var(--faint); margin-top: 7px; }
@@ -134,7 +134,12 @@ details.opts[open] > summary::before { transform: rotate(90deg); }
 details.opts > summary:hover .sumleft { color: var(--text); }
 .sumleft { font-size: 12.5px; font-weight: 650; color: var(--text-dim); }
 .sumnote { font-size: 11.5px; color: var(--faint); }
-details.opts > .body { padding-top: 2px; border-top: 1px solid var(--border); margin-top: 2px; }
+/* .body here is a child of <details>, not of .panel, so the `.panel > .body`
+   padding rule never applied and the fields ran edge to edge. */
+details.opts > .body {
+  padding: 15px 19px 19px;
+  border-top: 1px solid var(--border);
+}
 
 textarea#pasteBox {
   width: 100%; min-height: 148px; resize: vertical; margin-top: 12px;
@@ -234,8 +239,8 @@ button.ghost.primaryish { border-color: rgba(47,124,246,.42); color: var(--accen
   gap: 46px; align-items: center;
 }
 @media (max-width: 900px) { .hero { grid-template-columns: 1fr; text-align: center; padding: 32px 24px; gap: 26px; } }
-.hero .art { width: 260px; height: 210px; }
-@media (max-width: 900px) { .hero .art { width: 200px; height: 162px; margin: 0 auto; } }
+.hero .art { width: 290px; height: 203px; }
+@media (max-width: 900px) { .hero .art { width: 224px; height: 157px; margin: 0 auto; } }
 .hero h2 { font-size: 30px; line-height: 1.2; margin: 0 0 12px; font-weight: 700; letter-spacing: -.022em; }
 @media (max-width: 900px) { .hero h2 { font-size: 23px; } }
 .hero p { margin: 0 0 24px; color: var(--muted); font-size: 15px; }
