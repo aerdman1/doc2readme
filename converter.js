@@ -1026,6 +1026,78 @@ function collectImages(zip, rels, blocks, stem, imageDir, report) {
   return { urls, files };
 }
 
+/** A zip that is NOT a .docx — i.e. a folder of documents someone zipped. */
+async function looksLikeArchive(filename, bytes, arrayBuffer) {
+  if (!(bytes[0] === 0x50 && bytes[1] === 0x4b)) return false;
+  if (/\.docx$/i.test(filename || '')) return false;
+  try {
+    const zip = await readZip(arrayBuffer);
+    return !zip.has('word/document.xml');
+  } catch (e) { return false; }
+}
+
+const DOC_MEMBER = /\.(docx|pdf|md|markdown|mdx)$/i;
+const SPEC_MEMBER = /\.(ya?ml|json)$/i;
+
+/**
+ * Convert every document inside a dropped .zip, preserving its folder layout,
+ * and lay the results out the way ReadMe git-sync expects.
+ */
+async function convertArchive(arrayBuffer, filename, opts) {
+  const report = { source: filename, kind: 'archive', members: [], warnings: [] };
+  const zip = await readZip(arrayBuffer);
+
+  const docs = [], specs = [];
+  const names = [...zip.keys()].sort();
+  for (const name of names) {
+    const base = name.split('/').pop();
+    // __MACOSX and dotfiles are packaging noise, not documents.
+    if (!base || base.startsWith('.') || name.startsWith('__MACOSX/')) continue;
+    if (SPEC_MEMBER.test(base) && !DOC_MEMBER.test(base)) {
+      // Only treat it as a spec if it smells like one; a stray config is not.
+      const head = new TextDecoder('utf-8').decode(zip.get(name).subarray(0, 400));
+      if (/openapi|swagger/i.test(head)) specs.push({ path: name, data: zip.get(name) });
+      continue;
+    }
+    if (!DOC_MEMBER.test(base)) continue;
+
+    const bytes = zip.get(name);
+    const sub = { ...opts, category: '', split: 0, noFrontmatter: false };
+    sub.forceMarkdown = /\.(md|markdown|mdx)$/i.test(base);
+    try {
+      const res = await convertDocument(bytes.buffer.slice(
+        bytes.byteOffset, bytes.byteOffset + bytes.byteLength), base, sub);
+      const page = res.files.find((f) => f.text !== undefined);
+      if (!page) continue;
+      const stem = base.replace(/\.[^.]+$/, '');
+      docs.push({
+        srcPath: name,
+        slug: slugify(window.gitSync.stripNumPrefix(stem)),
+        body: page.text,
+      });
+      report.members.push({ name, kind: res.report.kind, ok: true });
+      for (const k of ['codeBlocks', 'callouts', 'images', 'autocorrectFixes',
+                       'mdEscapedTags', 'pdfTables'])
+        if (res.report[k]) report[k] = (report[k] || 0) + res.report[k];
+    } catch (err) {
+      report.members.push({ name, ok: false, error: err.message || String(err) });
+      report.warnings.push(name + ': ' + (err.message || err));
+    }
+  }
+
+  if (!docs.length) {
+    throw new Error('no .docx, .pdf or .md files found inside this zip');
+  }
+
+  const built = window.gitSync.buildGitSync(docs, specs, {
+    defaultCategory: opts.category || '',
+  });
+  report.gitsync = built.report;
+  report.warnings.push(...built.report.warnings);
+  report.written = built.files.map((f) => f.path);
+  return { files: built.files, report };
+}
+
 function looksLikeMarkdown(filename, bytes) {
   if (/\.(md|markdown|mdx|txt)$/i.test(filename || '')) return true;
   // A .docx is a zip and a PDF starts %PDF-; anything else that decodes as
@@ -1051,6 +1123,10 @@ async function convertDocument(arrayBuffer, filename, opts) {
   const stem = filename.replace(/\.[^.]+$/, '');
   const report = { source: filename };
   const head = new Uint8Array(arrayBuffer, 0, Math.min(1024, arrayBuffer.byteLength));
+
+  if (await looksLikeArchive(filename, head, arrayBuffer)) {
+    return convertArchive(arrayBuffer, filename, opts);
+  }
 
   let blocks, zip = null, ctx = null;
 
@@ -1164,6 +1240,6 @@ function defaultOptions() {
 }
 
 window.docx2readme = { convertDocument, convertDocx: convertDocument, defaultOptions,
-                       looksLikeMarkdown,
+                       looksLikeMarkdown, convertArchive,
                        makeZip, slugify, normKey, looksLikePdf,
                        DEFAULT_LABEL_HEADINGS, DEFAULT_DROP_SECTIONS };

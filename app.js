@@ -23,8 +23,9 @@ function setMode(next) {
   $('modeMd').classList.toggle('on', md);
   $('modeDoc').setAttribute('aria-selected', String(!md));
   $('modeMd').setAttribute('aria-selected', String(md));
-  $('picker').accept = md ? '.md,.markdown,.mdx,.txt' : '.docx,.pdf';
-  $('dropTitle').textContent = md ? 'Drop Markdown files here' : 'Drop Word or PDF files here';
+  $('picker').accept = md ? '.md,.markdown,.mdx,.txt,.zip' : '.docx,.pdf,.zip';
+  $('dropTitle').textContent = md ? 'Drop Markdown files or a .zip here'
+                                 : 'Drop Word, PDF or a .zip here';
   $('pasteBox').hidden = !md;
   const hero = $('heroTitle'), sub = $('heroSub');
   if (hero) hero.textContent = md ? 'Drop or paste Markdown to clean it up'
@@ -54,7 +55,7 @@ function refreshConvertEnabled() {
   $('convertBtn').disabled = !picked.length && !pastedMarkdown();
 }
 
-const DOC_EXT = /\.(docx|pdf)$/i;
+const DOC_EXT = /\.(docx|pdf|zip)$/i;
 const MD_EXT = /\.(md|markdown|mdx|txt)$/i;
 
 async function addFiles(list) {
@@ -72,7 +73,7 @@ async function addFiles(list) {
         setStatus(f.name + ' — save it as .docx, PDF or Markdown first.', true);
         continue;
       } else {
-        setStatus(f.name + ' — needs to be .docx, .pdf or .md.', true);
+        setStatus(f.name + ' — needs to be .docx, .pdf, .md or a .zip of those.', true);
         continue;
       }
     }
@@ -179,7 +180,7 @@ $('convertBtn').addEventListener('click', async () => {
   }
 
   refreshConvertEnabled();
-  const pages = converted.filter((f) => f.text !== undefined && f.path.endsWith('.md'));
+  const pages = converted.filter((f) => f.text !== undefined && /\.mdx?$/i.test(f.path));
   const failed = reports.filter((r) => r.error).length;
   setStatus(pages.length + ' page(s) from ' + (reports.length - failed) + ' document(s)' +
             (failed ? ' · ' + failed + ' failed' : ''), failed > 0 && !pages.length);
@@ -189,7 +190,8 @@ $('convertBtn').addEventListener('click', async () => {
 
 function renderResults() {
   const box = $('results');
-  const previewable = converted.filter((f) => f.text !== undefined);
+  // _order.yaml files ship in the zip but are not pages to preview.
+  const previewable = converted.filter((f) => f.text !== undefined && /\.mdx?$/i.test(f.path));
   const any = previewable.length > 0;
   box.hidden = !any;
   $('reportPanel').hidden = !reports.length;
@@ -201,7 +203,7 @@ function renderResults() {
   tabs.innerHTML = '';
   previewable.forEach((f, i) => {
     const b = document.createElement('button');
-    b.textContent = f.path;
+    b.textContent = f.path.replace(/^docs\//, '');
     b.className = i === active ? 'on' : '';
     b.onclick = () => { active = i; renderResults(); };
     tabs.append(b);
@@ -248,6 +250,21 @@ function renderResults() {
       add('<span class="warn">Repaired ' + r.autocorrectFixes +
           ' Word AutoCorrect character(s) inside code blocks — those snippets would have failed when copied.</span>');
     }
+    if (r.kind === 'archive' && r.gitsync) {
+      const g = r.gitsync;
+      add('Laid out for ReadMe git-sync: ' + g.categories.length + ' categor'
+        + (g.categories.length === 1 ? 'y' : 'ies') + ', ' + g.pages + ' page(s)'
+        + (g.parents ? ', ' + g.parents + ' parent page(s)' : '')
+        + (g.stubs ? ' (' + g.stubs + ' placeholder)' : '')
+        + (g.specs ? ', ' + g.specs + ' API spec(s) copied to reference/' : ''));
+      add('Categories: ' + escHtml(g.categories.join(', ')));
+      const failed = (r.members || []).filter((m) => !m.ok);
+      if (failed.length) {
+        add('<span class="warn">' + failed.length + ' file(s) in the zip could not be '
+          + 'converted: ' + escHtml(failed.map((m) => m.name).join(', ')) + '</span>');
+      }
+    }
+    for (const wmsg of r.warnings || []) add('<span class="warn">' + escHtml(wmsg) + '</span>');
     if (r.mdEscapedTags) {
       add('<span class="warn">Escaped ' + r.mdEscapedTags + ' angle-bracket placeholder(s) '
         + 'such as &lt;YOUR_TOKEN&gt; — unescaped, MDX reads those as JSX tags and the page '

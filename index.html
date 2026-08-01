@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>doc2readme — Word, PDF &amp; Markdown to ReadMe</title>
-<link rel="stylesheet" href="styles.css?v=f6789433">
+<link rel="stylesheet" href="styles.css?v=5ed15aba">
 </head>
 <body>
 
@@ -73,9 +73,10 @@
   <circle cx="130" cy="140" r="21" stroke="#8dbaff" stroke-opacity=".45" fill="none"/>
   <path d="M130 131v18M122 139l8-8 8 8" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
-          <strong id="dropTitle">Drop Word or PDF files here</strong>
+          <strong id="dropTitle">Drop Word, PDF or a .zip here</strong>
           <span class="sm">or click to browse</span>
-          <input type="file" id="picker" accept=".docx,.pdf" multiple hidden>
+          <span class="subtle" id="dropHint">A zip of folders keeps its structure</span>
+          <input type="file" id="picker" accept=".docx,.pdf,.zip" multiple hidden>
         </div>
         <textarea id="pasteBox" hidden placeholder="…or paste Markdown here to clean it up"></textarea>
         <ul class="files" id="fileList" hidden></ul>
@@ -83,8 +84,12 @@
     </div>
 
     <div class="panel">
-      <h2>Settings</h2>
-      <div class="body">
+      <details class="opts" id="optsPanel">
+        <summary>
+          <span class="sumleft">More options</span>
+          <span class="sumnote">Defaults are fine for most documents</span>
+        </summary>
+        <div class="body">
         <div class="grp">
           <label class="fld" for="category">Category folder</label>
           <div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
@@ -92,11 +97,10 @@
           <div class="hint">Becomes a ReadMe category when you import the output.</div>
         </div>
         <div class="grp"><label class="fld" for="split">Page splitting</label><div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M8 12h12M8 18h12M4 12v6"/></svg></span><select id="split"><option value="0" selected>One page per document</option><option value="1">Split at top-level headings</option><option value="2">Split at second-level headings</option></select><span class="caret"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div></div>
-        <div class="grp"><label class="fld" for="maxLevel">Heading depth</label><div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h11M4 18h7"/></svg></span><select id="maxLevel"><option value="3" selected>Up to H3 (recommended)</option><option value="4">Up to H4</option><option value="6">Keep every level</option></select><span class="caret"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div><div class="hint">ReadMe's page contents panel stops at H3.</div></div>
-        <div class="grp"><label class="fld" for="labelStyle">Repeated headings</label><div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span><select id="labelStyle"><option value="bold" selected>Turn into bold text</option><option value="plain">Turn into plain text</option><option value="keep">Leave as headings</option></select><span class="caret"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div><div class="hint">Reference docs repeat the same headings under every endpoint. Left alone they crowd out the real sections in the contents panel.</div></div>
+        <div class="grp"><label class="fld" for="maxLevel">Heading depth</label><div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h11M4 18h7"/></svg></span><select id="maxLevel"><option value="3" selected>Up to H3 (recommended)</option><option value="4">Up to H4</option><option value="6">Keep every level</option></select><span class="caret"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div><div class="hint">Deeper headings still render, but stop appearing in ReadMe&rsquo;s contents panel.</div></div>
+        <div class="grp"><label class="fld" for="labelStyle">Boilerplate headings</label><div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span><select id="labelStyle"><option value="bold" selected>Turn into bold text</option><option value="plain">Turn into plain text</option><option value="keep">Leave as headings</option></select><span class="caret"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div><div class="hint">API docs repeat &ldquo;Example request&rdquo;, &ldquo;Response&rdquo; and the like under every endpoint. As headings they bury the real sections in ReadMe&rsquo;s contents panel.</div></div>
         <div class="grp"><label class="fld" for="calloutStyle">Callout style</label><div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span><select id="calloutStyle"><option value="component" selected>ReadMe &lt;Callout&gt; component</option><option value="blockquote">Blockquote with emoji</option><option value="plain">Plain paragraph</option></select><span class="caret"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div><div class="hint">The component form is what most ReadMe projects use.</div></div>
-        <details class="more">
-          <summary>Advanced</summary>
+        
           <div class="checkline"><input type="checkbox" id="callouts" checked>
             <label for="callouts">Turn warning and note paragraphs into callouts</label></div>
           <div class="checkline"><input type="checkbox" id="frontmatter" checked>
@@ -106,13 +110,13 @@
           <div class="checkline"><input type="checkbox" id="keepCover">
             <label for="keepCover">Keep cover page, revision history and table of contents</label></div>
           <div class="grp spaced">
-            <label class="fld" for="extraLabels">Additional repeated headings</label>
+            <label class="fld" for="extraLabels">More boilerplate headings</label>
             <div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
               <input type="text" id="extraLabels" placeholder="Comma separated"></div>
-            <div class="hint">Anything else your template repeats that should not be a section.</div>
+            <div class="hint">Anything else your template repeats. Comma separated.</div>
           </div>
-        </details>
-      </div>
+        </div>
+      </details>
     </div>
 
     <div class="panel">
@@ -252,8 +256,9 @@
 
 <script src="preview.js?v=7876c2b4"></script>
 <script src="md-clean.js?v=e11dbd15"></script>
+<script src="gitsync.js?v=f09e9e24"></script>
 <script src="pdf-extract.js?v=bcc01aa2"></script>
-<script src="converter.js?v=4d5bc53c"></script>
-<script src="app.js?v=acafe03f"></script>
+<script src="converter.js?v=303597b1"></script>
+<script src="app.js?v=dfbc7434"></script>
 </body>
 </html>

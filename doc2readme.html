@@ -134,6 +134,23 @@ body {
 .drop .art { width: 116px; height: 92px; margin: 0 auto 12px; display: block; }
 .drop strong { display: block; color: var(--text); font-size: 14px; font-weight: 650; }
 .drop .sm { font-size: 12.5px; color: var(--accent-2); }
+.drop .subtle { display: block; font-size: 11.5px; color: var(--faint); margin-top: 7px; }
+
+/* one optional disclosure instead of a wall of settings */
+details.opts > summary {
+  cursor: pointer; list-style: none; padding: 15px 19px;
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+}
+details.opts > summary::-webkit-details-marker { display: none; }
+details.opts > summary::before {
+  content: "\203A"; color: var(--faint); transition: transform .16s;
+  display: inline-block; font-size: 15px; line-height: 1;
+}
+details.opts[open] > summary::before { transform: rotate(90deg); }
+details.opts > summary:hover .sumleft { color: var(--text); }
+.sumleft { font-size: 12.5px; font-weight: 650; color: var(--text-dim); }
+.sumnote { font-size: 11.5px; color: var(--faint); }
+details.opts > .body { padding-top: 2px; border-top: 1px solid var(--border); margin-top: 2px; }
 
 textarea#pasteBox {
   width: 100%; min-height: 148px; resize: vertical; margin-top: 12px;
@@ -498,9 +515,10 @@ pre.md {
   <circle cx="130" cy="140" r="21" stroke="#8dbaff" stroke-opacity=".45" fill="none"/>
   <path d="M130 131v18M122 139l8-8 8 8" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
-          <strong id="dropTitle">Drop Word or PDF files here</strong>
+          <strong id="dropTitle">Drop Word, PDF or a .zip here</strong>
           <span class="sm">or click to browse</span>
-          <input type="file" id="picker" accept=".docx,.pdf" multiple hidden>
+          <span class="subtle" id="dropHint">A zip of folders keeps its structure</span>
+          <input type="file" id="picker" accept=".docx,.pdf,.zip" multiple hidden>
         </div>
         <textarea id="pasteBox" hidden placeholder="…or paste Markdown here to clean it up"></textarea>
         <ul class="files" id="fileList" hidden></ul>
@@ -508,8 +526,12 @@ pre.md {
     </div>
 
     <div class="panel">
-      <h2>Settings</h2>
-      <div class="body">
+      <details class="opts" id="optsPanel">
+        <summary>
+          <span class="sumleft">More options</span>
+          <span class="sumnote">Defaults are fine for most documents</span>
+        </summary>
+        <div class="body">
         <div class="grp">
           <label class="fld" for="category">Category folder</label>
           <div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
@@ -517,11 +539,10 @@ pre.md {
           <div class="hint">Becomes a ReadMe category when you import the output.</div>
         </div>
         <div class="grp"><label class="fld" for="split">Page splitting</label><div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M8 12h12M8 18h12M4 12v6"/></svg></span><select id="split"><option value="0" selected>One page per document</option><option value="1">Split at top-level headings</option><option value="2">Split at second-level headings</option></select><span class="caret"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div></div>
-        <div class="grp"><label class="fld" for="maxLevel">Heading depth</label><div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h11M4 18h7"/></svg></span><select id="maxLevel"><option value="3" selected>Up to H3 (recommended)</option><option value="4">Up to H4</option><option value="6">Keep every level</option></select><span class="caret"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div><div class="hint">ReadMe's page contents panel stops at H3.</div></div>
-        <div class="grp"><label class="fld" for="labelStyle">Repeated headings</label><div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span><select id="labelStyle"><option value="bold" selected>Turn into bold text</option><option value="plain">Turn into plain text</option><option value="keep">Leave as headings</option></select><span class="caret"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div><div class="hint">Reference docs repeat the same headings under every endpoint. Left alone they crowd out the real sections in the contents panel.</div></div>
+        <div class="grp"><label class="fld" for="maxLevel">Heading depth</label><div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h11M4 18h7"/></svg></span><select id="maxLevel"><option value="3" selected>Up to H3 (recommended)</option><option value="4">Up to H4</option><option value="6">Keep every level</option></select><span class="caret"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div><div class="hint">Deeper headings still render, but stop appearing in ReadMe&rsquo;s contents panel.</div></div>
+        <div class="grp"><label class="fld" for="labelStyle">Boilerplate headings</label><div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span><select id="labelStyle"><option value="bold" selected>Turn into bold text</option><option value="plain">Turn into plain text</option><option value="keep">Leave as headings</option></select><span class="caret"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div><div class="hint">API docs repeat &ldquo;Example request&rdquo;, &ldquo;Response&rdquo; and the like under every endpoint. As headings they bury the real sections in ReadMe&rsquo;s contents panel.</div></div>
         <div class="grp"><label class="fld" for="calloutStyle">Callout style</label><div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span><select id="calloutStyle"><option value="component" selected>ReadMe &lt;Callout&gt; component</option><option value="blockquote">Blockquote with emoji</option><option value="plain">Plain paragraph</option></select><span class="caret"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div><div class="hint">The component form is what most ReadMe projects use.</div></div>
-        <details class="more">
-          <summary>Advanced</summary>
+        
           <div class="checkline"><input type="checkbox" id="callouts" checked>
             <label for="callouts">Turn warning and note paragraphs into callouts</label></div>
           <div class="checkline"><input type="checkbox" id="frontmatter" checked>
@@ -531,13 +552,13 @@ pre.md {
           <div class="checkline"><input type="checkbox" id="keepCover">
             <label for="keepCover">Keep cover page, revision history and table of contents</label></div>
           <div class="grp spaced">
-            <label class="fld" for="extraLabels">Additional repeated headings</label>
+            <label class="fld" for="extraLabels">More boilerplate headings</label>
             <div class="selwrap"><span class="lead"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
               <input type="text" id="extraLabels" placeholder="Comma separated"></div>
-            <div class="hint">Anything else your template repeats that should not be a section.</div>
+            <div class="hint">Anything else your template repeats. Comma separated.</div>
           </div>
-        </details>
-      </div>
+        </div>
+      </details>
     </div>
 
     <div class="panel">
@@ -1195,6 +1216,195 @@ function markdownToBlocks(text, report) {
 }
 
 window.mdClean = { markdownToBlocks, escapeStrayTags, isKnownTag };
+
+</script>
+<script>
+/* gitsync.js — arrange converted pages into the layout ReadMe git-sync expects.
+ *
+ * The shape, taken from real synced repositories:
+ *
+ *   docs/
+ *     _order.yaml                  category display names, in order
+ *     Getting Started/
+ *       _order.yaml                child slugs, in order
+ *       installation.md            a leaf page
+ *       authentication/            a page with children is a FOLDER
+ *         index.md                 ...and its own content lives in index.md
+ *         _order.yaml
+ *         oauth.md
+ *   reference/                     OpenAPI specs, if the drop had any
+ *     _order.yaml
+ *
+ * Two things are easy to get wrong and matter: a parent page is a folder whose
+ * own body is index.md (not a sibling file), and every folder needs an
+ * _order.yaml or ReadMe orders pages alphabetically, which is almost never the
+ * order a document was written in.
+ */
+'use strict';
+
+// "01-intro.docx", "1. Overview.pdf", "02_setup.md" — authors number files to
+// force an order. Use it for ordering, then drop it from the title and slug.
+const NUM_PREFIX = /^\s*(\d{1,3})\s*[-._)]\s*/;
+
+function orderKey(name) {
+  const m = NUM_PREFIX.exec(name);
+  return m ? parseInt(m[1], 10) : Number.MAX_SAFE_INTEGER;
+}
+
+function stripNumPrefix(name) {
+  return name.replace(NUM_PREFIX, '');
+}
+
+// A file that is clearly "the page for this folder" rather than a child of it.
+const INDEXY = /^(index|overview|introduction|intro|readme|start|_index)$/i;
+
+function isIndexName(stem) {
+  return INDEXY.test(stripNumPrefix(stem).trim());
+}
+
+function yamlItem(value) {
+  const s = String(value);
+  return /^[A-Za-z0-9][\w .,'\/&()+-]*$/.test(s) && s.trim() === s
+    ? '- ' + s + '\n'
+    : '- "' + s.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"\n';
+}
+
+const SPEC_EXT = /\.(ya?ml|json)$/i;
+
+/**
+ * @param {Array} docs  [{ srcPath, title, slug, body, order }]
+ *        srcPath is the path inside the dropped folder/zip, e.g.
+ *        "Getting Started/auth/oauth.docx". Depth decides the hierarchy.
+ * @param {Array} specs [{ path, data }] OpenAPI files passed through untouched
+ * @param {object} opts { defaultCategory }
+ * @returns {{files: Array<{path, text?, data?}>, report: object}}
+ */
+function buildGitSync(docs, specs, opts) {
+  const report = { categories: [], parents: 0, pages: 0, stubs: 0, warnings: [] };
+  const out = [];
+
+  // ---- group into a tree ---------------------------------------------------
+  const root = { dirs: new Map(), files: [], index: null };
+  const getDir = (node, name) => {
+    if (!node.dirs.has(name)) node.dirs.set(name, { name, dirs: new Map(), files: [], index: null });
+    return node.dirs.get(name);
+  };
+
+  for (const doc of docs) {
+    const parts = String(doc.srcPath || '').split('/').filter(Boolean);
+    const file = parts.pop();
+    const stem = file.replace(/\.[^.]+$/, '');
+    let node = root;
+    // A loose file with no folder needs somewhere to live.
+    if (!parts.length) {
+      const cat = (opts.defaultCategory || '').trim();
+      if (!cat) {
+        report.warnings.push(
+          file + ' sits at the top level — set a category folder so it has somewhere to go.');
+        continue;
+      }
+      parts.push(cat);
+    }
+    for (const p of parts) node = getDir(node, stripNumPrefix(p));
+    const entry = { doc, stem, order: orderKey(file) };
+    // An index-ish file is the *folder's own page* — but only for a page
+    // folder. A category is just a container in ReadMe; it has no page of its
+    // own, so an index.md sitting directly in one is an ordinary page.
+    // Getting this wrong silently drops the file.
+    const inPageFolder = parts.length >= 2;
+    if (isIndexName(stem) && inPageFolder && !node.index) node.index = entry;
+    else node.files.push(entry);
+  }
+
+  // ---- emit ----------------------------------------------------------------
+  const sortEntries = (a, b) =>
+    (a.order - b.order) || String(a.slug || a.stem).localeCompare(String(b.slug || b.stem));
+
+  function emitChildren(node, basePath, depth) {
+    const kids = [];
+
+    for (const f of node.files) {
+      kids.push({ kind: 'page', order: f.order, slug: f.doc.slug, entry: f });
+    }
+    for (const [name, sub] of node.dirs) {
+      kids.push({
+        kind: 'folder', order: orderKey(name), name,
+        // Always the folder name: "authentication/index.docx" is the
+        // authentication page, not a page called "index".
+        slug: slugifyName(name), sub,
+      });
+    }
+    kids.sort(sortEntries);
+
+    out.push({ path: basePath + '/_order.yaml', text: kids.map((k) => yamlItem(k.slug)).join('') });
+
+    for (const k of kids) {
+      if (k.kind === 'page') {
+        out.push({ path: basePath + '/' + k.slug + '.md', text: k.entry.doc.body });
+        report.pages++;
+      } else {
+        // ReadMe caps nesting at three page levels below a category.
+        if (depth >= 3) {
+          report.warnings.push(
+            '"' + k.name + '" is deeper than ReadMe\'s three page levels — flattened up.');
+          flattenInto(k.sub, basePath, k.slug);
+          continue;
+        }
+        const folder = basePath + '/' + k.slug;
+        if (k.sub.index) {
+          out.push({ path: folder + '/index.md', text: k.sub.index.doc.body });
+        } else {
+          out.push({ path: folder + '/index.md', text: stubPage(k.name) });
+          report.stubs++;
+        }
+        report.parents++;
+        emitChildren(k.sub, folder, depth + 1);
+      }
+    }
+  }
+
+  function flattenInto(node, basePath, prefix) {
+    for (const f of node.files) {
+      out.push({ path: basePath + '/' + prefix + '-' + f.doc.slug + '.md', text: f.doc.body });
+      report.pages++;
+    }
+    for (const [name, sub] of node.dirs) flattenInto(sub, basePath, prefix + '-' + slugifyName(name));
+  }
+
+  const categories = [...root.dirs.keys()];
+  for (const cat of categories) {
+    report.categories.push(cat);
+    emitChildren(root.dirs.get(cat), 'docs/' + cat, 1);
+  }
+  out.unshift({ path: 'docs/_order.yaml', text: categories.map(yamlItem).join('') });
+
+  // ---- OpenAPI specs ride along untouched ----------------------------------
+  if (specs && specs.length) {
+    for (const s of specs) {
+      out.push({ path: 'reference/' + s.path.split('/').pop(), data: s.data });
+    }
+    out.push({
+      path: 'reference/_order.yaml',
+      text: specs.map((s) => yamlItem(s.path.split('/').pop().replace(SPEC_EXT, ''))).join(''),
+    });
+    report.specs = specs.length;
+  }
+
+  return { files: out, report };
+}
+
+function slugifyName(name) {
+  return (window.docx2readme ? window.docx2readme.slugify(stripNumPrefix(name))
+                             : stripNumPrefix(name).toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+}
+
+function stubPage(name) {
+  // A folder with no index-ish document still needs a parent page to hang the
+  // children off. Emit a titled placeholder rather than inventing prose.
+  return '---\ntitle: "' + String(name).replace(/"/g, '\\"') + '"\nhidden: true\n---\n';
+}
+
+window.gitSync = { buildGitSync, isIndexName, stripNumPrefix, orderKey };
 
 </script>
 <script>
@@ -2637,6 +2847,78 @@ function collectImages(zip, rels, blocks, stem, imageDir, report) {
   return { urls, files };
 }
 
+/** A zip that is NOT a .docx — i.e. a folder of documents someone zipped. */
+async function looksLikeArchive(filename, bytes, arrayBuffer) {
+  if (!(bytes[0] === 0x50 && bytes[1] === 0x4b)) return false;
+  if (/\.docx$/i.test(filename || '')) return false;
+  try {
+    const zip = await readZip(arrayBuffer);
+    return !zip.has('word/document.xml');
+  } catch (e) { return false; }
+}
+
+const DOC_MEMBER = /\.(docx|pdf|md|markdown|mdx)$/i;
+const SPEC_MEMBER = /\.(ya?ml|json)$/i;
+
+/**
+ * Convert every document inside a dropped .zip, preserving its folder layout,
+ * and lay the results out the way ReadMe git-sync expects.
+ */
+async function convertArchive(arrayBuffer, filename, opts) {
+  const report = { source: filename, kind: 'archive', members: [], warnings: [] };
+  const zip = await readZip(arrayBuffer);
+
+  const docs = [], specs = [];
+  const names = [...zip.keys()].sort();
+  for (const name of names) {
+    const base = name.split('/').pop();
+    // __MACOSX and dotfiles are packaging noise, not documents.
+    if (!base || base.startsWith('.') || name.startsWith('__MACOSX/')) continue;
+    if (SPEC_MEMBER.test(base) && !DOC_MEMBER.test(base)) {
+      // Only treat it as a spec if it smells like one; a stray config is not.
+      const head = new TextDecoder('utf-8').decode(zip.get(name).subarray(0, 400));
+      if (/openapi|swagger/i.test(head)) specs.push({ path: name, data: zip.get(name) });
+      continue;
+    }
+    if (!DOC_MEMBER.test(base)) continue;
+
+    const bytes = zip.get(name);
+    const sub = { ...opts, category: '', split: 0, noFrontmatter: false };
+    sub.forceMarkdown = /\.(md|markdown|mdx)$/i.test(base);
+    try {
+      const res = await convertDocument(bytes.buffer.slice(
+        bytes.byteOffset, bytes.byteOffset + bytes.byteLength), base, sub);
+      const page = res.files.find((f) => f.text !== undefined);
+      if (!page) continue;
+      const stem = base.replace(/\.[^.]+$/, '');
+      docs.push({
+        srcPath: name,
+        slug: slugify(window.gitSync.stripNumPrefix(stem)),
+        body: page.text,
+      });
+      report.members.push({ name, kind: res.report.kind, ok: true });
+      for (const k of ['codeBlocks', 'callouts', 'images', 'autocorrectFixes',
+                       'mdEscapedTags', 'pdfTables'])
+        if (res.report[k]) report[k] = (report[k] || 0) + res.report[k];
+    } catch (err) {
+      report.members.push({ name, ok: false, error: err.message || String(err) });
+      report.warnings.push(name + ': ' + (err.message || err));
+    }
+  }
+
+  if (!docs.length) {
+    throw new Error('no .docx, .pdf or .md files found inside this zip');
+  }
+
+  const built = window.gitSync.buildGitSync(docs, specs, {
+    defaultCategory: opts.category || '',
+  });
+  report.gitsync = built.report;
+  report.warnings.push(...built.report.warnings);
+  report.written = built.files.map((f) => f.path);
+  return { files: built.files, report };
+}
+
 function looksLikeMarkdown(filename, bytes) {
   if (/\.(md|markdown|mdx|txt)$/i.test(filename || '')) return true;
   // A .docx is a zip and a PDF starts %PDF-; anything else that decodes as
@@ -2662,6 +2944,10 @@ async function convertDocument(arrayBuffer, filename, opts) {
   const stem = filename.replace(/\.[^.]+$/, '');
   const report = { source: filename };
   const head = new Uint8Array(arrayBuffer, 0, Math.min(1024, arrayBuffer.byteLength));
+
+  if (await looksLikeArchive(filename, head, arrayBuffer)) {
+    return convertArchive(arrayBuffer, filename, opts);
+  }
 
   let blocks, zip = null, ctx = null;
 
@@ -2775,7 +3061,7 @@ function defaultOptions() {
 }
 
 window.docx2readme = { convertDocument, convertDocx: convertDocument, defaultOptions,
-                       looksLikeMarkdown,
+                       looksLikeMarkdown, convertArchive,
                        makeZip, slugify, normKey, looksLikePdf,
                        DEFAULT_LABEL_HEADINGS, DEFAULT_DROP_SECTIONS };
 
@@ -2806,8 +3092,9 @@ function setMode(next) {
   $('modeMd').classList.toggle('on', md);
   $('modeDoc').setAttribute('aria-selected', String(!md));
   $('modeMd').setAttribute('aria-selected', String(md));
-  $('picker').accept = md ? '.md,.markdown,.mdx,.txt' : '.docx,.pdf';
-  $('dropTitle').textContent = md ? 'Drop Markdown files here' : 'Drop Word or PDF files here';
+  $('picker').accept = md ? '.md,.markdown,.mdx,.txt,.zip' : '.docx,.pdf,.zip';
+  $('dropTitle').textContent = md ? 'Drop Markdown files or a .zip here'
+                                 : 'Drop Word, PDF or a .zip here';
   $('pasteBox').hidden = !md;
   const hero = $('heroTitle'), sub = $('heroSub');
   if (hero) hero.textContent = md ? 'Drop or paste Markdown to clean it up'
@@ -2837,7 +3124,7 @@ function refreshConvertEnabled() {
   $('convertBtn').disabled = !picked.length && !pastedMarkdown();
 }
 
-const DOC_EXT = /\.(docx|pdf)$/i;
+const DOC_EXT = /\.(docx|pdf|zip)$/i;
 const MD_EXT = /\.(md|markdown|mdx|txt)$/i;
 
 async function addFiles(list) {
@@ -2855,7 +3142,7 @@ async function addFiles(list) {
         setStatus(f.name + ' — save it as .docx, PDF or Markdown first.', true);
         continue;
       } else {
-        setStatus(f.name + ' — needs to be .docx, .pdf or .md.', true);
+        setStatus(f.name + ' — needs to be .docx, .pdf, .md or a .zip of those.', true);
         continue;
       }
     }
@@ -2962,7 +3249,7 @@ $('convertBtn').addEventListener('click', async () => {
   }
 
   refreshConvertEnabled();
-  const pages = converted.filter((f) => f.text !== undefined && f.path.endsWith('.md'));
+  const pages = converted.filter((f) => f.text !== undefined && /\.mdx?$/i.test(f.path));
   const failed = reports.filter((r) => r.error).length;
   setStatus(pages.length + ' page(s) from ' + (reports.length - failed) + ' document(s)' +
             (failed ? ' · ' + failed + ' failed' : ''), failed > 0 && !pages.length);
@@ -2972,7 +3259,8 @@ $('convertBtn').addEventListener('click', async () => {
 
 function renderResults() {
   const box = $('results');
-  const previewable = converted.filter((f) => f.text !== undefined);
+  // _order.yaml files ship in the zip but are not pages to preview.
+  const previewable = converted.filter((f) => f.text !== undefined && /\.mdx?$/i.test(f.path));
   const any = previewable.length > 0;
   box.hidden = !any;
   $('reportPanel').hidden = !reports.length;
@@ -2984,7 +3272,7 @@ function renderResults() {
   tabs.innerHTML = '';
   previewable.forEach((f, i) => {
     const b = document.createElement('button');
-    b.textContent = f.path;
+    b.textContent = f.path.replace(/^docs\//, '');
     b.className = i === active ? 'on' : '';
     b.onclick = () => { active = i; renderResults(); };
     tabs.append(b);
@@ -3031,6 +3319,21 @@ function renderResults() {
       add('<span class="warn">Repaired ' + r.autocorrectFixes +
           ' Word AutoCorrect character(s) inside code blocks — those snippets would have failed when copied.</span>');
     }
+    if (r.kind === 'archive' && r.gitsync) {
+      const g = r.gitsync;
+      add('Laid out for ReadMe git-sync: ' + g.categories.length + ' categor'
+        + (g.categories.length === 1 ? 'y' : 'ies') + ', ' + g.pages + ' page(s)'
+        + (g.parents ? ', ' + g.parents + ' parent page(s)' : '')
+        + (g.stubs ? ' (' + g.stubs + ' placeholder)' : '')
+        + (g.specs ? ', ' + g.specs + ' API spec(s) copied to reference/' : ''));
+      add('Categories: ' + escHtml(g.categories.join(', ')));
+      const failed = (r.members || []).filter((m) => !m.ok);
+      if (failed.length) {
+        add('<span class="warn">' + failed.length + ' file(s) in the zip could not be '
+          + 'converted: ' + escHtml(failed.map((m) => m.name).join(', ')) + '</span>');
+      }
+    }
+    for (const wmsg of r.warnings || []) add('<span class="warn">' + escHtml(wmsg) + '</span>');
     if (r.mdEscapedTags) {
       add('<span class="warn">Escaped ' + r.mdEscapedTags + ' angle-bracket placeholder(s) '
         + 'such as &lt;YOUR_TOKEN&gt; — unescaped, MDX reads those as JSX tags and the page '

@@ -9,6 +9,9 @@ Drop in a `.docx`, a `.pdf`, or Markdown you already have. Get back clean
 Markdown you can paste straight into ReadMe — or a `.zip` that drops into a
 ReadMe git-synced repository.
 
+**Have a whole folder?** Zip it and drop that in. The folder structure becomes
+your ReadMe structure, and you get back a ready-to-commit `docs/` tree.
+
 ---
 
 ## Your documents never leave your computer
@@ -68,6 +71,41 @@ it in first. It is a close approximation, not ReadMe's editor.
 
 Every change it makes is listed in the summary panel after conversion, so you
 can see exactly what it did rather than diffing by hand.
+
+---
+
+## Converting a whole folder
+
+Zip a folder of documents and drop the zip in. The layout you get back is what
+ReadMe git-sync expects:
+
+```
+docs/
+  _order.yaml                  your categories, in order
+  Getting Started/
+    _order.yaml                pages in this category, in order
+    installation.md
+    authentication/            a page with children is a folder…
+      index.md                 …and its own content lives here
+      _order.yaml
+      oauth.md
+reference/
+  api.yaml                     any OpenAPI files, copied through untouched
+```
+
+- **Top-level folders become categories.** Subfolders become nested pages.
+- **A file named `index`, `overview`, `intro` or `readme`** inside a subfolder
+  becomes that page's own content. A subfolder without one gets a placeholder
+  parent page so its children still have somewhere to hang.
+- **Numeric prefixes set the order.** `01-intro.docx`, `02-setup.docx` produce
+  an `_order.yaml` in that order, and the numbers are stripped from the titles.
+  Without them, pages are ordered alphabetically — which is rarely the order
+  you wrote them in.
+- Mixed formats are fine; `.docx`, `.pdf` and `.md` can sit side by side.
+- ReadMe allows three page levels below a category. Anything deeper is
+  flattened up, and the summary tells you what moved.
+
+Commit the `docs/` folder to a repo connected to ReadMe and it publishes.
 
 ---
 
@@ -138,6 +176,9 @@ OCR before anything can convert them, and the page will tell you so.
 
 A current browser — Chrome or Edge 103+, Firefox 113+, or Safari 16.4+.
 Nothing to install.
+
+Defaults suit most documents; **More options** covers category, page splitting,
+heading depth, boilerplate headings and callout style if you need them.
 
 ---
 

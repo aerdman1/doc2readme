@@ -36,11 +36,13 @@ def main():
     pdfextract = read("pdf-extract.js")
     preview = read("preview.js")
     mdclean = read("md-clean.js")
+    gitsync = read("gitsync.js")
 
     for name, body in (("converter.js", converter), ("app.js", app),
                        ("pdf-extract.js", pdfextract),
                        ("preview.js", preview),
-                       ("md-clean.js", mdclean)):
+                       ("md-clean.js", mdclean),
+                       ("gitsync.js", gitsync)):
         # A literal </script> inside a JS string would close the tag early.
         if "</script" in body.lower():
             sys.exit("%s contains a literal </script> — escape it first" % name)
@@ -66,6 +68,7 @@ def main():
     script_block = re.compile(
         r'<script src="preview\.js(?:\?v=[0-9a-f]+)?"></script>\s*'
         r'<script src="md-clean\.js(?:\?v=[0-9a-f]+)?"></script>\s*'
+        r'<script src="gitsync\.js(?:\?v=[0-9a-f]+)?"></script>\s*'
         r'<script src="pdf-extract\.js(?:\?v=[0-9a-f]+)?"></script>\s*'
         r'<script src="converter\.js(?:\?v=[0-9a-f]+)?"></script>\s*'
         r'<script src="app\.js(?:\?v=[0-9a-f]+)?"></script>')
@@ -75,6 +78,7 @@ def main():
         lambda m: ("<script>\n" + boot + "\n</script>\n"
                    "<script>\n" + preview + "\n</script>\n"
                    "<script>\n" + mdclean + "\n</script>\n"
+                   "<script>\n" + gitsync + "\n</script>\n"
                    "<script>\n" + pdfextract + "\n</script>\n"
                    "<script>\n" + converter + "\n</script>\n"
                    "<script>\n" + app + "\n</script>"),
