@@ -1,11 +1,12 @@
 # doc2readme
 
-**Word, PDF and Markdown → ReadMe-ready Markdown, entirely in your browser.**
+**Word, PDF, HTML and Markdown → ReadMe-ready Markdown, entirely in your browser.**
 
 ### → [Open the converter](https://aerdman1.github.io/doc2readme/)
 
-Drop a `.docx`, a `.pdf`, or Markdown you already have. Get back clean Markdown
-to paste into ReadMe — or a `.zip` that drops straight into a git-synced repo.
+Drop a `.docx`, a `.pdf`, an HTML export, or Markdown you already have. Get
+back clean Markdown to paste into ReadMe — or a `.zip` that drops straight into
+a git-synced repo.
 
 ---
 
@@ -46,6 +47,25 @@ roughly how the page will look.
 
 ---
 
+## HTML exports
+
+Confluence, Zendesk, static-site builds and Word's own "Save as Web Page" all
+produce HTML, and all of it arrives buried in chrome.
+
+- Navigation, sidebars, breadcrumbs, "on this page" widgets, cookie banners and
+  footers are dropped. If the page has a `<main>` or `<article>`, that's what
+  gets read.
+- **Word HTML** gets special handling, because Word doesn't emit real headings:
+  `MsoHeading1..6` become actual `<h1>`–`<h6>`, its table of contents is
+  dropped, pseudo-lists (a paragraph starting with a bullet glyph) become real
+  list items, runs of `&nbsp;` padding collapse, and `<o:p>`/VML leftovers go.
+- Spacer images and tracking pixels from Word's `_files` sidecar folder are
+  skipped.
+- `<pre>` keeps its language from a `language-*` or `data-lang` class.
+- Images already on full URLs keep working; relative ones are flagged.
+
+---
+
 ## Converting a whole folder
 
 Zip a folder and drop it in. You get back the layout git-sync expects:
@@ -67,7 +87,7 @@ reference/
 - `index`, `overview`, `intro` or `readme` inside a subfolder becomes that
   page's content. Without one you get a placeholder parent page.
 - Numeric prefixes (`01-`, `02-`) set the order and are stripped from titles.
-- Mixed `.docx`, `.pdf` and `.md` in one zip is fine.
+- Mixed `.docx`, `.pdf`, `.html` and `.md` in one zip is fine.
 
 Commit the `docs/` folder to a repo connected to ReadMe and it publishes.
 

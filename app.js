@@ -27,9 +27,9 @@ drop.addEventListener('drop', (e) => addFiles(e.dataTransfer.files));
 // after zips were supported.
 const COPY = {
   doc: {
-    drop: 'Drop Word, PDF or a .zip here',
+    drop: 'Drop Word, PDF, HTML or a .zip here',
     hint: 'A zip of folders keeps its structure',
-    hero: 'Drop a Word doc, PDF or .zip to get started',
+    hero: 'Drop a Word doc, PDF, HTML file or .zip to get started',
     sub:  'Everything happens on this machine. Your files are never sent anywhere.',
   },
   md: {
@@ -48,7 +48,8 @@ function setMode(next) {
   $('modeDoc').setAttribute('aria-selected', String(!md));
   $('modeMd').setAttribute('aria-selected', String(md));
   const copy = md ? COPY.md : COPY.doc;
-  $('picker').accept = md ? '.md,.markdown,.mdx,.txt,.zip' : '.docx,.pdf,.zip';
+  $('picker').accept = md ? '.md,.markdown,.mdx,.txt,.zip'
+                          : '.docx,.pdf,.html,.htm,.xhtml,.zip';
   $('dropTitle').textContent = copy.drop;
   $('dropHint').textContent = copy.hint;
   $('pasteBox').hidden = !md;
@@ -76,7 +77,7 @@ function refreshConvertEnabled() {
   $('convertBtn').disabled = !picked.length && !pastedMarkdown();
 }
 
-const DOC_EXT = /\.(docx|pdf|zip)$/i;
+const DOC_EXT = /\.(docx|pdf|html?|xhtml|zip)$/i;
 const MD_EXT = /\.(md|markdown|mdx|txt)$/i;
 
 async function addFiles(list) {
@@ -94,7 +95,7 @@ async function addFiles(list) {
         setStatus(f.name + ' — save it as .docx, PDF or Markdown first.', true);
         continue;
       } else {
-        setStatus(f.name + ' — needs to be .docx, .pdf, .md or a .zip of those.', true);
+        setStatus(f.name + ' — needs to be .docx, .pdf, .html, .md or a .zip of those.', true);
         continue;
       }
     }
@@ -265,11 +266,25 @@ function renderResults() {
     if (r.pdfPages) bits.unshift(r.pdfPages + ' PDF page(s) read');
     if (r.mdCodeBlocks) bits.push(r.mdCodeBlocks + ' code block(s) preserved');
     if (r.mdTables) bits.push(r.mdTables + ' table(s) parsed');
+    if (r.htmlTables) bits.push(r.htmlTables + ' table(s) parsed');
+    if (r.htmlCodeBlocks) bits.push(r.htmlCodeBlocks + ' code block(s) kept');
     if (r.pdfTables) bits.push(r.pdfTables + ' table(s) reconstructed');
     if (bits.length) add(escHtml(bits.join(', ')));
     if (r.autocorrectFixes) {
       add('<span class="warn">Repaired ' + r.autocorrectFixes +
           ' Word AutoCorrect character(s) inside code blocks — those snippets would have failed when copied.</span>');
+    }
+    if (r.kind === 'html') {
+      if (r.htmlRoot) add('Read the &lt;' + escHtml(r.htmlRoot) + '&gt; region of the page');
+      if (r.htmlChromeDropped) add(r.htmlChromeDropped + ' navigation / sidebar / footer block(s) dropped');
+      if (r.htmlWordHeadings) add(r.htmlWordHeadings + ' Word heading style(s) promoted to real headings');
+      if (r.htmlWordLists) add(r.htmlWordLists + ' Word pseudo-list paragraph(s) turned into list items');
+      if (r.htmlWordSidecar) add(r.htmlWordSidecar + ' Word sidecar image(s) skipped (spacers and tracking pixels)');
+      if (r.htmlAbsoluteImages) add(r.htmlAbsoluteImages + ' image(s) already point at full URLs and will keep working');
+      if (r.htmlRelativeImages) {
+        add('<span class="warn">' + r.htmlRelativeImages + ' image(s) use relative paths — '
+          + 'host them and replace the paths, or they will not resolve in ReadMe.</span>');
+      }
     }
     if (r.kind === 'archive' && r.gitsync) {
       const g = r.gitsync;

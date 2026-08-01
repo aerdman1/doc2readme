@@ -1036,7 +1036,7 @@ async function looksLikeArchive(filename, bytes, arrayBuffer) {
   } catch (e) { return false; }
 }
 
-const DOC_MEMBER = /\.(docx|pdf|md|markdown|mdx)$/i;
+const DOC_MEMBER = /\.(docx|pdf|md|markdown|mdx|html?|xhtml)$/i;
 const SPEC_MEMBER = /\.(ya?ml|json)$/i;
 
 /**
@@ -1098,6 +1098,12 @@ async function convertArchive(arrayBuffer, filename, opts) {
   return { files: built.files, report };
 }
 
+function looksLikeHtml(filename, bytes) {
+  if (/\.(html?|xhtml)$/i.test(filename || '')) return true;
+  const head = new TextDecoder('utf-8').decode(bytes.subarray(0, 512)).trim().toLowerCase();
+  return /^<!doctype html|^<html[\s>]|^<\?xml[^>]*>\s*<!doctype html/.test(head);
+}
+
 function looksLikeMarkdown(filename, bytes) {
   if (/\.(md|markdown|mdx|txt)$/i.test(filename || '')) return true;
   // A .docx is a zip and a PDF starts %PDF-; anything else that decodes as
@@ -1130,7 +1136,12 @@ async function convertDocument(arrayBuffer, filename, opts) {
 
   let blocks, zip = null, ctx = null;
 
-  if (opts.forceMarkdown || looksLikeMarkdown(filename, head)) {
+  if (looksLikeHtml(filename, head)) {
+    report.kind = 'html';
+    if (!window.htmlExtract) throw new Error('the HTML reader did not load — reload the page');
+    blocks = window.htmlExtract.htmlToBlocks(
+      new TextDecoder('utf-8').decode(new Uint8Array(arrayBuffer)), report);
+  } else if (opts.forceMarkdown || looksLikeMarkdown(filename, head)) {
     report.kind = 'markdown';
     if (!window.mdClean) throw new Error('the Markdown cleaner did not load — reload the page');
     const text = new TextDecoder('utf-8').decode(new Uint8Array(arrayBuffer));
@@ -1171,7 +1182,7 @@ async function convertDocument(arrayBuffer, filename, opts) {
 
   // "pasted" is a placeholder filename, not a real document title.
   const fallbackTitle = stem === 'pasted' ? '' : stem.replace(/[-_]+/g, ' ').trim();
-  const title = opts.title || report.mdTitle ||
+  const title = opts.title || report.mdTitle || report.htmlTitle ||
                 (zip ? docTitle(zip, fallbackTitle) : fallbackTitle);
   const { urls, files: imageFiles } = zip
     ? collectImages(zip, ctx.rels, blocks, stem, opts.imageDir, report)
@@ -1240,6 +1251,7 @@ function defaultOptions() {
 }
 
 window.docx2readme = { convertDocument, convertDocx: convertDocument, defaultOptions,
-                       looksLikeMarkdown, convertArchive,
+                       looksLikeMarkdown, looksLikeHtml, convertArchive,
+                       escapeInline: esc,
                        makeZip, slugify, normKey, looksLikePdf,
                        DEFAULT_LABEL_HEADINGS, DEFAULT_DROP_SECTIONS };

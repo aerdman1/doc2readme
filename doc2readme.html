@@ -12,7 +12,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' blob:; style-src 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; worker-src blob:; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>doc2readme — Word, PDF, Markdown &amp; .zip to ReadMe</title>
+<title>doc2readme — Word, PDF, HTML &amp; Markdown to ReadMe</title>
 <style>
 /* doc2readme — dark theme */
 
@@ -465,7 +465,7 @@ pre.md {
   <span class="brand"><svg class="rm-logo" role="img" aria-label="ReadMe" width="357" height="70" viewBox="0 0 357 70" fill="none" xmlns="http://www.w3.org/2000/svg"><mask id="mask0_1_2" mask-type="luminance" maskUnits="userSpaceOnUse" x="2" y="7" width="353" height="61"><path d="M354.1 7.5H2.5V67.5H354.1V7.5Z" fill="white"/></mask><g mask="url(#mask0_1_2)"><path d="M140.321 18.7197C129.26 18.7197 121.409 26.4988 121.409 37.346C121.409 48.6931 130.045 55.9009 141.034 55.9009C146.213 55.9009 153.035 54.2354 156.824 49.541C157.214 49.058 157.192 48.3619 156.75 47.9264L153.164 44.3959C152.71 43.9484 151.974 43.9353 151.521 44.3843C148.596 47.2826 144.863 48.4073 141.462 48.4073C136.181 48.4073 131.756 45.4813 131.186 39.5585H157.863C158.157 39.5585 158.413 39.3439 158.451 39.052C158.543 38.357 158.59 37.6351 158.59 36.7744C158.59 31.3514 156.663 26.9262 153.379 23.7156C150.169 20.5038 145.602 18.7197 140.321 18.7197ZM131.257 33.6347C131.9 28.8534 135.254 25.9275 140.107 25.9275C142.676 25.9275 144.888 26.7843 146.458 28.4257C147.671 29.7812 148.598 31.4941 148.884 33.6347H131.257Z" fill="currentColor"/><path d="M346.206 23.7159C342.996 20.5041 338.429 18.7197 333.148 18.7197C322.086 18.7197 314.236 26.4988 314.236 37.346C314.236 48.6931 322.872 55.9008 333.861 55.9008C339.04 55.9008 345.862 54.2353 349.651 49.5409C350.041 49.0577 350.019 48.3619 349.577 47.9263L345.991 44.3959C345.537 43.9484 344.801 43.9353 344.348 44.3842C341.423 47.2826 337.69 48.4072 334.289 48.4072C329.008 48.4072 324.584 45.4813 324.013 39.5584H350.69C350.984 39.5584 351.24 39.3438 351.279 39.0519C351.37 38.357 351.417 37.635 351.417 36.7746C351.417 31.3516 349.49 26.9265 346.206 23.7159ZM324.084 33.6344C324.727 28.8531 328.081 25.9271 332.934 25.9271C335.502 25.9271 337.715 26.784 339.284 28.4254C340.498 29.7809 341.425 31.4938 341.711 33.6344H324.084Z" fill="currentColor"/><path d="M203.217 47.7481C203.219 47.7327 203.218 47.717 203.22 47.7016H201.372V31.2717V20.9853C201.372 20.1677 200.709 19.505 199.892 19.505H194.418C193.601 19.505 192.938 20.168 192.938 20.9853V23.5609C189.799 20.5712 185.595 18.7197 180.748 18.7197C170.043 18.7197 162.55 26.7128 162.55 37.346C162.55 47.8359 169.973 55.9008 180.748 55.9008C186.242 55.9008 190.452 53.6169 193.45 50.1928V51.6344C193.45 53.5968 195.041 55.1873 197.003 55.1873H202.988C203.805 55.1873 204.468 54.5243 204.468 53.707V49.1824C204.468 48.4462 203.921 47.8624 203.217 47.7481ZM182.317 47.5512C176.466 47.5512 172.255 43.0546 172.255 37.3457C172.255 31.5653 176.466 27.0698 182.317 27.0698C187.598 27.0698 192.237 30.78 192.237 37.3457C192.237 43.8399 187.598 47.5512 182.317 47.5512Z" fill="currentColor"/><path d="M311.602 47.7019H308.936V33.992C308.936 24.8574 303.156 18.7197 294.306 18.7197C288.954 18.7197 284.815 20.9321 282.031 24.2157C279.606 20.7184 275.681 18.7197 270.614 18.7197C265.547 18.7197 261.779 20.8893 259.28 24.1151V20.9146C259.28 20.097 258.617 19.4344 257.8 19.4344H252.326C251.509 19.4344 250.846 20.097 250.846 20.9146V52.4131C250.846 53.9451 252.088 55.187 253.62 55.187H263.428C264.245 55.187 264.908 54.5243 264.908 53.7067V49.1821C264.908 48.3645 264.245 47.7019 263.428 47.7019H260.766V34.7774C260.766 30.1385 263.762 27.2123 268.116 27.2123C272.398 27.2123 274.896 30.1383 274.896 34.7774V52.4131C274.896 53.9451 276.137 55.187 277.669 55.187H286.438C287.252 55.187 287.912 54.5275 287.912 53.7137V49.1749C287.912 48.3613 287.252 47.7016 286.438 47.7016H284.815V34.7771C284.815 30.1383 287.884 27.212 292.165 27.212C296.447 27.212 299.017 30.138 299.017 34.7771V47.7016L299.021 51.4009V52.4128C299.021 53.9448 300.263 55.1867 301.795 55.1867H311.602C312.42 55.1867 313.083 54.524 313.083 53.7064V49.1818C313.083 48.3642 312.42 47.7019 311.602 47.7019Z" fill="currentColor"/><path d="M241.732 7.50641H233.756C232.939 7.50641 232.276 8.16935 232.276 8.98669V13.5113C232.276 14.3289 232.939 14.9915 233.756 14.9915H234.179C234.178 14.9942 234.179 14.9968 234.178 14.9997H235.366V22.2886C232.44 20.0761 228.801 18.7194 224.661 18.7194C213.957 18.7194 206.464 26.7125 206.464 37.3458C206.464 47.8357 213.886 55.9006 224.661 55.9006C229.854 55.9006 233.886 53.8469 236.844 50.7325V53.7065C236.844 54.5241 237.507 55.1868 238.324 55.1868H243.798C244.615 55.1868 245.278 54.5241 245.278 53.7065V48.7318C245.28 48.7318 245.282 48.7306 245.285 48.7303V11.0593C245.285 9.09689 243.694 7.50641 241.732 7.50641ZM226.232 47.5516C220.38 47.5516 216.17 43.0549 216.17 37.3461C216.17 31.5657 220.38 27.0702 226.232 27.0702C231.513 27.0702 236.15 30.7803 236.15 37.3461C236.15 43.8403 231.513 47.5516 226.232 47.5516Z" fill="currentColor"/><path d="M68.0574 16.0897H50.7348C44.6488 16.0897 39.5663 20.3509 38.2846 26.0498C37.0032 20.3509 31.9209 16.0897 25.8347 16.0897H8.51213C5.1916 16.0897 2.5 18.7813 2.5 22.1015V52.582C2.5 55.9026 5.1916 58.5942 8.51213 58.5942H20.0066C31.9945 58.6309 35.9256 61.4463 37.82 67.1996C37.8979 67.3773 38.0785 67.5064 38.2849 67.5064C38.4922 67.5064 38.6719 67.3787 38.7492 67.1996C40.643 61.4463 44.5744 58.6311 56.562 58.5944C56.5617 58.5944 56.5623 58.5944 56.562 58.5944L68.0577 58.5942C71.3782 58.5942 74.0698 55.9026 74.0698 52.582V22.1015C74.0698 18.7813 71.3779 16.0897 68.0574 16.0897ZM32.5304 48.7405C32.5304 49.0949 32.2431 49.3822 31.8887 49.3822H12.3098C11.9554 49.3822 11.6681 49.0949 11.6681 48.7405V46.3039C11.6681 45.9494 11.9554 45.6621 12.3098 45.6621H31.8887C32.2431 45.6621 32.5304 45.9494 32.5304 46.3039V48.7405ZM32.5304 41.1565C32.5304 41.5109 32.2431 41.7982 31.8887 41.7982H12.3098C11.9554 41.7982 11.6681 41.5109 11.6681 41.1565V38.7199C11.6681 38.3654 11.9554 38.0781 12.3098 38.0781H31.8887C32.2431 38.0781 32.5304 38.3654 32.5304 38.7199V41.1565ZM32.5304 33.5725C32.5304 33.9269 32.2431 34.2142 31.8887 34.2142H12.3098C11.9554 34.2142 11.6681 33.9269 11.6681 33.5725V31.1359C11.6681 30.7814 11.9554 30.4942 12.3098 30.4942H31.8887C32.2431 30.4942 32.5304 30.7814 32.5304 31.1359V33.5725ZM64.9011 48.7405C64.9011 49.0949 64.6139 49.3822 64.2594 49.3822H44.6811C44.3267 49.3822 44.0394 49.0949 44.0394 48.7405V46.3039C44.0394 45.9494 44.3267 45.6621 44.6811 45.6621H64.2594C64.6139 45.6621 64.9011 45.9494 64.9011 46.3039V48.7405ZM64.9011 41.1565C64.9011 41.5109 64.6139 41.7982 64.2594 41.7982H44.6811C44.3267 41.7982 44.0394 41.5109 44.0394 41.1565V38.7199C44.0394 38.3654 44.3267 38.0781 44.6811 38.0781H64.2594C64.6139 38.0781 64.9011 38.3654 64.9011 38.7199V41.1565ZM64.9011 33.5725C64.9011 33.9269 64.6139 34.2142 64.2594 34.2142H44.6811C44.3267 34.2142 44.0394 33.9269 44.0394 33.5725V31.1359C44.0394 30.7814 44.3267 30.4942 44.6811 30.4942H64.2594C64.6139 30.4942 64.9011 30.7814 64.9011 31.1359V33.5725Z" fill="#012AFF"/><path d="M122.886 20.5593C121.726 19.7781 119 18.4597 114.045 18.7197C109.554 18.9552 106.051 21.0754 103.697 24.8574V24.1439C103.697 24.1343 103.695 24.1267 103.695 24.1174V23.0567C103.695 21.0943 102.105 19.5036 100.142 19.5036H92.4039C91.5863 19.5036 90.9236 20.1662 90.9236 20.9839V25.6591C90.9236 26.4767 91.5866 27.1393 92.4039 27.1393H93.7684L93.1924 27.1402H93.9897L93.9915 27.1408H95.6314V47.7016H92.9726C92.1628 47.7016 91.5066 48.3581 91.5066 49.1676V53.721C91.5066 54.5305 92.1628 55.1867 92.9723 55.1867H108.204C109.013 55.1867 109.669 54.5305 109.669 53.7213V49.1673C109.669 48.3578 109.013 47.7016 108.204 47.7016H105.551V35.9905C105.551 30.9943 108.483 27.5947 113.187 27.3557C115.376 27.2443 116.925 27.579 117.874 27.8991C118.139 27.9884 118.415 27.8537 118.532 27.6005C119.62 25.2435 121.113 23.1626 122.943 21.4136C123.2 21.1679 123.18 20.7582 122.885 20.5596L122.886 20.5593Z" fill="currentColor"/></g></svg></span>
   <span class="divider"></span>
   <h1>doc2readme</h1>
-  <span class="tag">Word, PDF, Markdown &amp; .zip&nbsp;&rarr;&nbsp;ReadMe</span>
+  <span class="tag">Word, PDF, HTML &amp; Markdown&nbsp;&rarr;&nbsp;ReadMe</span>
   <span class="spacer"></span>
   <span class="pill"><span class="dot"></span>Runs entirely in your browser — nothing is uploaded</span>
 </div>
@@ -492,10 +492,10 @@ pre.md {
   <path d="M14 6.5l1.1 2.7 2.7 1.1-2.7 1.1L14 14.1l-1.1-2.7-2.7-1.1 2.7-1.1z" fill="#8fb6f5" opacity=".55"/>
   <path d="M60 8l.9 2.2 2.2.9-2.2.9-.9 2.2-.9-2.2-2.2-.9 2.2-.9z" fill="#8fb6f5" opacity=".4"/>
 </svg>
-          <strong id="dropTitle">Drop Word, PDF or a .zip here</strong>
+          <strong id="dropTitle">Drop Word, PDF, HTML or a .zip here</strong>
           <span class="sm">or click to browse</span>
           <span class="subtle" id="dropHint">A zip of folders keeps its structure</span>
-          <input type="file" id="picker" accept=".docx,.pdf,.zip" multiple hidden>
+          <input type="file" id="picker" accept=".docx,.pdf,.html,.htm,.xhtml,.zip" multiple hidden>
         </div>
         <textarea id="pasteBox" hidden placeholder="…or paste Markdown here to clean it up"></textarea>
         <ul class="files" id="fileList" hidden></ul>
@@ -560,6 +560,8 @@ pre.md {
       <stop offset="0" stop-color="#f2635f"/><stop offset="1" stop-color="#c8332f"/></linearGradient>
     <linearGradient id="gz" x1=".1" y1="0" x2=".9" y2="1">
       <stop offset="0" stop-color="#f5b93f"/><stop offset="1" stop-color="#d18a12"/></linearGradient>
+    <linearGradient id="gh" x1=".1" y1="0" x2=".9" y2="1">
+      <stop offset="0" stop-color="#3fbf87"/><stop offset="1" stop-color="#1d8a5c"/></linearGradient>
     <linearGradient id="gt" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#1d2a3a"/><stop offset="1" stop-color="#111a26"/></linearGradient>
     <radialGradient id="glow" cx=".5" cy=".5" r=".5">
@@ -580,11 +582,17 @@ pre.md {
     <text x="92" y="95" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif"
           font-size="25" font-weight="700" fill="#fff">W</text>
   </g>
-  <g transform="rotate(16 208 90)">
-    <rect x="180" y="50" width="56" height="76" rx="8" fill="url(#gz)"/>
-    <rect x="180.75" y="50.75" width="54.5" height="74.5" rx="7.25" stroke="#fff" stroke-opacity=".24" fill="none"/>
-    <text x="208" y="97" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif"
-          font-size="17" font-weight="700" fill="#fff">ZIP</text>
+  <g transform="rotate(13 200 92)">
+    <rect x="172" y="52" width="56" height="76" rx="8" fill="url(#gh)"/>
+    <rect x="172.75" y="52.75" width="54.5" height="74.5" rx="7.25" stroke="#fff" stroke-opacity=".24" fill="none"/>
+    <text x="200" y="98" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif"
+          font-size="15" font-weight="700" fill="#fff">HTML</text>
+  </g>
+  <g transform="rotate(24 246 100)">
+    <rect x="222" y="64" width="50" height="68" rx="8" fill="url(#gz)"/>
+    <rect x="222.75" y="64.75" width="48.5" height="66.5" rx="7.25" stroke="#fff" stroke-opacity=".24" fill="none"/>
+    <text x="247" y="105" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif"
+          font-size="15" font-weight="700" fill="#fff">ZIP</text>
   </g>
   <g>
     <rect x="122" y="40" width="56" height="78" rx="8" fill="url(#gp)"/>
@@ -600,7 +608,7 @@ pre.md {
   <path d="M150 131v18M142 139l8-8 8 8" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
         <div>
-          <h2 id="heroTitle">Drop a Word doc, PDF or .zip to get started</h2>
+          <h2 id="heroTitle">Drop a Word doc, PDF, HTML file or .zip to get started</h2>
           <p id="heroSub">Everything happens on this machine. Your files are never sent anywhere.</p>
           <div class="chips">
             <span class="chip"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>100% Private</span>
@@ -627,9 +635,10 @@ pre.md {
           <p>Tables converted with merged cells expanded, body images extracted, page logos skipped,
              and warning notes turned into ReadMe callouts.</p></div>
         <div class="card"><div class="ic r"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg></div>
-          <h3>Whole folders, PDFs, Markdown</h3>
-          <p>Zip a folder and its structure becomes your ReadMe structure, ready to commit. PDFs are
-             rebuilt from font sizes and layout. Existing Markdown gets cleaned and made MDX-safe.</p></div>
+          <h3>HTML, PDFs, whole folders</h3>
+          <p>HTML exports get their navigation, sidebars and Word cruft stripped. PDFs are rebuilt
+             from font sizes and layout. Zip a folder and its structure becomes your ReadMe
+             structure, ready to commit.</p></div>
       </div>
     </div>
 
@@ -1208,6 +1217,310 @@ function markdownToBlocks(text, report) {
 }
 
 window.mdClean = { markdownToBlocks, escapeStrayTags, isKnownTag };
+
+</script>
+<script>
+/* html-extract.js — HTML in, the same Block[] model out.
+ *
+ * The fourth source format, and a common one: Confluence and Zendesk exports,
+ * old doc sites, static-site builds, and Word's own "Save as Web Page".
+ *
+ * HTML sits between .docx and PDF in how much it tells us. Unlike a PDF it
+ * has real structure — an <h2> is genuinely a heading, a <table> genuinely a
+ * table — so this is closer to the Word path than the PDF one. What it also
+ * has is enormous amounts of chrome: navigation, sidebars, cookie banners,
+ * "on this page" widgets, and in Word's case a blizzard of mso- spans. Most
+ * of the work here is deciding what to throw away.
+ *
+ * Parsing is DOMParser, which every target browser already has.
+ */
+'use strict';
+
+// Never content.
+const DROP_TAGS = new Set([
+  'script', 'style', 'noscript', 'template', 'svg', 'canvas', 'iframe',
+  'object', 'embed', 'link', 'meta', 'form', 'input', 'button', 'select',
+  'textarea', 'audio', 'video', 'map', 'area',
+  // Word/Office namespaced leftovers. DOMParser lowercases these to o:p etc.
+  'o:p', 'o:smarttagtype', 'v:shape', 'v:shapetype', 'v:imagedata', 'v:stroke',
+  'v:formulas', 'v:path', 'w:sdt', 'xml',
+]);
+
+// Page furniture. Removed wholesale — an export's sidebar is not documentation.
+const CHROME_TAGS = new Set(['nav', 'aside', 'header', 'footer']);
+const CHROME_HINT = /(^|[\s_-])(nav|navbar|sidebar|side-?bar|menu|breadcrumb|toc|table-of-contents|on-this-page|pagination|pager|footer|header|masthead|banner|cookie|consent|skip-link|search|social|share|related|feedback|rate-this|edit-this-page|advert|ad-)([\s_-]|$)/i;
+
+const HEADING = /^h([1-6])$/;
+
+/* ---- Word "Save as Web Page" ------------------------------------------
+ * Word does not emit <h2>; it emits <p class=MsoHeading2>. It pads cells with
+ * runs of &nbsp;, puts its table of contents in MsoToc1..9, splits long
+ * blocks into CxSpFirst/Middle/Last continuations, litters the file with
+ * <o:p> and VML, and points decorative images into a "<name>_files" sidecar
+ * folder that never ships. Handling these is the difference between a usable
+ * conversion and a page of empty paragraphs.
+ */
+const MSO_HEADING = /(?:^|\s)(?:Mso)?Heading([1-6])(?:CxSp\w+)?(?:\s|$)/i;
+const MSO_TOC = /(?:^|\s)(?:Mso)?Toc\d?(?:CxSp\w+)?(?:\s|$)/i;
+const MSO_LIST = /(?:^|\s)MsoListParagraph(?:CxSp\w+)?(?:\s|$)/i;
+const WORD_SIDECAR = /(^|\/)[^/]+_files\//i;
+// Leading glyphs Word writes as literal text instead of using a real list.
+const WORD_BULLET = /^\s*(?:[•·▪◦‣∙o§]|[-–—])\s+/;
+
+function msoHeadingLevel(el) {
+  const m = MSO_HEADING.exec(el.getAttribute('class') || '');
+  return m ? +m[1] : 0;
+}
+const MONO_TAGS = new Set(['code', 'kbd', 'samp', 'tt', 'var']);
+
+function isChrome(el) {
+  if (CHROME_TAGS.has(el.localName)) return true;
+  const id = el.getAttribute('id') || '';
+  const cls = el.getAttribute('class') || '';
+  const role = el.getAttribute('role') || '';
+  if (/^(navigation|banner|contentinfo|complementary|search)$/i.test(role)) return true;
+  return CHROME_HINT.test(id) || CHROME_HINT.test(cls);
+}
+
+/** Prefer <main> / <article> when the document has one — that is the content. */
+function pickRoot(doc) {
+  for (const sel of ['main', 'article', '[role="main"]', '#content', '.markdown-body',
+                     '#main-content', '.article-body', '.wiki-content']) {
+    const el = doc.querySelector(sel);
+    if (el && el.textContent.trim().length > 200) return el;
+  }
+  return doc.body || doc.documentElement;
+}
+
+function langFromClass(el) {
+  const cls = (el.getAttribute('class') || '') + ' ' +
+              ((el.firstElementChild && el.firstElementChild.getAttribute('class')) || '');
+  const m = /(?:language|lang|highlight-source|brush:?)[-_ ]([a-z0-9+#]+)/i.exec(cls);
+  if (m) return m[1].toLowerCase();
+  const data = el.getAttribute('data-lang') || el.getAttribute('data-language') || '';
+  return data.toLowerCase();
+}
+
+/* ------------------------------------------------------------------ inline */
+
+function inlineOf(node, stats) {
+  let out = '';
+  for (const child of node.childNodes) {
+    if (child.nodeType === 3) {                       // text
+      // Word pads with runs of &nbsp;; treat them as ordinary spaces.
+      out += escText(child.nodeValue.replace(/\u00a0/g, ' ').replace(/\s+/g, ' '));
+      continue;
+    }
+    if (child.nodeType !== 1) continue;
+    const tag = child.localName;
+    if (DROP_TAGS.has(tag)) continue;
+    if (tag === 'br') { out += '\n'; continue; }
+    if (MONO_TAGS.has(tag)) {
+      const t = child.textContent.replace(/\s+/g, ' ').trim();
+      if (t) {
+        const ticks = (t.match(/`+/g) || []).reduce((a, b) => Math.max(a, b.length), 0) + 1;
+        out += '`'.repeat(ticks) + t + '`'.repeat(ticks);
+      }
+      continue;
+    }
+    if (tag === 'img') { out += imgMarkdown(child, stats); continue; }
+    if (tag === 'a') {
+      const href = (child.getAttribute('href') || '').trim();
+      const text = inlineOf(child, stats).trim();
+      if (!text) continue;
+      // Anchors to nowhere, and in-page jumps whose target we are not keeping,
+      // are noise; keep the words, drop the link.
+      out += (href && !/^#/.test(href) && !/^javascript:/i.test(href))
+        ? '[' + text + '](' + href.replace(/\s/g, '%20') + ')'
+        : text;
+      continue;
+    }
+    const inner = inlineOf(child, stats);
+    if (!inner.trim()) { out += inner; continue; }
+    if (tag === 'strong' || tag === 'b') out += wrapInline(inner, '**');
+    else if (tag === 'em' || tag === 'i') out += wrapInline(inner, '*');
+    else if (tag === 'del' || tag === 's' || tag === 'strike') out += wrapInline(inner, '~~');
+    else out += inner;
+  }
+  return out;
+}
+
+function wrapInline(piece, marker) {
+  const t = piece.trim();
+  if (!t) return piece;
+  const lead = piece.slice(0, piece.length - piece.trimStart().length);
+  const trail = piece.slice(piece.trimEnd().length);
+  return lead + marker + t + marker + trail;
+}
+
+function imgMarkdown(el, stats) {
+  const src = (el.getAttribute('src') || el.getAttribute('data-src') || '').trim();
+  if (!src) return '';
+  // Word's sidecar folder holds spacer rules and tracking pixels, and is
+  // almost never shipped alongside the .htm.
+  if (WORD_SIDECAR.test(src)) { stats.wordSidecar = (stats.wordSidecar || 0) + 1; return ''; }
+  const alt = (el.getAttribute('alt') || '').replace(/[[\]]/g, '');
+  if (/^https?:\/\//i.test(src)) stats.absoluteImages = (stats.absoluteImages || 0) + 1;
+  else stats.relativeImages = (stats.relativeImages || 0) + 1;
+  return '![' + escText(alt) + '](' + src.replace(/\s/g, '%20') + ')';
+}
+
+// converter.js owns escaping; reuse it so all four inputs escape identically.
+function escText(text) {
+  return window.docx2readme && window.docx2readme.escapeInline
+    ? window.docx2readme.escapeInline(text)
+    : String(text || '').replace(/([\\`*[\]<>])/g, '\\$1');
+}
+
+/* ------------------------------------------------------------------ blocks */
+
+function htmlToBlocks(html, report) {
+  const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
+  if (!doc || !doc.body) throw new Error('could not parse this HTML');
+
+  const titleEl = doc.querySelector('title');
+  if (titleEl && titleEl.textContent.trim()) report.htmlTitle = titleEl.textContent.trim();
+
+  const root = pickRoot(doc);
+  report.htmlRoot = root.localName + (root.id ? '#' + root.id : '');
+
+  const blocks = [];
+  const stats = {};
+  let dropped = 0;
+
+  const walk = (node, listDepth) => {
+    for (const el of node.children) {
+      const tag = el.localName;
+      if (DROP_TAGS.has(tag)) continue;
+      if (isChrome(el)) { dropped++; continue; }
+
+      // Word's TOC is a run of MsoToc paragraphs — ReadMe builds its own.
+      if (MSO_TOC.test(el.getAttribute('class') || '')) { dropped++; continue; }
+
+      const msoLevel = msoHeadingLevel(el);
+      if (msoLevel && !HEADING.test(tag)) {
+        const text = el.textContent.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+        if (text) {
+          blocks.push({ kind: 'heading', level: msoLevel, text, images: [] });
+          report.htmlWordHeadings = (report.htmlWordHeadings || 0) + 1;
+        }
+        continue;
+      }
+
+      // A Word "list" is a plain paragraph starting with a bullet glyph.
+      if (MSO_LIST.test(el.getAttribute('class') || '')) {
+        const raw = inlineOf(el, stats).replace(/\s*\n\s*/g, ' ').trim();
+        const m = WORD_BULLET.exec(raw);
+        if (m) {
+          blocks.push({ kind: 'list', text: raw.slice(m[0].length).trim(),
+                        level: 0, ordered: false, images: [] });
+          report.htmlWordLists = (report.htmlWordLists || 0) + 1;
+          continue;
+        }
+        if (raw) blocks.push({ kind: 'para', text: raw, images: [] });
+        continue;
+      }
+
+      const h = HEADING.exec(tag);
+      if (h) {
+        const text = el.textContent.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+        if (text) blocks.push({ kind: 'heading', level: +h[1], text, images: [] });
+        continue;
+      }
+
+      if (tag === 'pre') {
+        const text = (el.textContent || '').replace(/\s+$/, '');
+        if (text.trim()) {
+          blocks.push({ kind: 'code', text, lang: langFromClass(el), images: [] });
+          report.htmlCodeBlocks = (report.htmlCodeBlocks || 0) + 1;
+        }
+        continue;
+      }
+
+      if (tag === 'table') { pushTable(el, blocks, stats, report); continue; }
+
+      if (tag === 'ul' || tag === 'ol') {
+        pushList(el, blocks, stats, tag === 'ol', listDepth || 0);
+        continue;
+      }
+
+      if (tag === 'blockquote') {
+        const text = inlineOf(el, stats).replace(/\s*\n\s*/g, ' ').trim();
+        if (text) blocks.push({ kind: 'para', text, images: [] });
+        continue;
+      }
+
+      if (tag === 'hr' || tag === 'br') continue;
+
+      if (tag === 'figure') {
+        const img = el.querySelector('img');
+        const cap = el.querySelector('figcaption');
+        const parts = [];
+        if (img) parts.push(imgMarkdown(img, stats));
+        if (cap && cap.textContent.trim()) parts.push(escText(cap.textContent.trim()));
+        if (parts.length) blocks.push({ kind: 'para', text: parts.join('\n'), images: [] });
+        continue;
+      }
+
+      // A container: recurse. A leaf with text: emit a paragraph.
+      const hasBlockKids = [...el.children].some((c) =>
+        /^(p|div|section|h[1-6]|ul|ol|table|pre|blockquote|figure|article|main|dl)$/.test(c.localName));
+      if (hasBlockKids) { walk(el, listDepth); continue; }
+
+      const text = inlineOf(el, stats).replace(/[ \t]+/g, ' ').trim();
+      if (text) blocks.push({ kind: 'para', text, images: [] });
+    }
+  };
+
+  walk(root, 0);
+
+  if (dropped) report.htmlChromeDropped = dropped;
+  if (stats.wordSidecar) report.htmlWordSidecar = stats.wordSidecar;
+  if (stats.absoluteImages) report.htmlAbsoluteImages = stats.absoluteImages;
+  if (stats.relativeImages) report.htmlRelativeImages = stats.relativeImages;
+  if (!blocks.length) throw new Error('no readable content found in this HTML');
+  return blocks;
+}
+
+function pushList(listEl, blocks, stats, ordered, depth) {
+  for (const li of listEl.children) {
+    if (li.localName !== 'li') continue;
+    const nested = [...li.children].filter((c) => c.localName === 'ul' || c.localName === 'ol');
+    const clone = li.cloneNode(true);
+    for (const n of [...clone.children]) {
+      if (n.localName === 'ul' || n.localName === 'ol') n.remove();
+    }
+    const text = inlineOf(clone, stats).replace(/\s*\n\s*/g, ' ').trim();
+    if (text) {
+      blocks.push({ kind: 'list', text, level: Math.min(3, depth), ordered, images: [] });
+    }
+    for (const sub of nested) {
+      pushList(sub, blocks, stats, sub.localName === 'ol', Math.min(3, depth + 1));
+    }
+  }
+}
+
+function pushTable(tableEl, blocks, stats, report) {
+  const rows = [];
+  for (const tr of tableEl.querySelectorAll('tr')) {
+    // Skip rows belonging to a nested table; GFM cannot express those anyway.
+    if (tr.closest('table') !== tableEl) continue;
+    const cells = [];
+    for (const cell of tr.children) {
+      if (cell.localName !== 'td' && cell.localName !== 'th') continue;
+      const text = inlineOf(cell, stats).replace(/\s*\n\s*/g, '<br />').trim();
+      const span = parseInt(cell.getAttribute('colspan') || '1', 10) || 1;
+      cells.push(text.replace(/\|/g, '\\|'));
+      for (let i = 1; i < span; i++) cells.push('');
+    }
+    if (cells.length) rows.push(cells);
+  }
+  if (!rows.length) return;
+  blocks.push({ kind: 'table', rows });
+  report.htmlTables = (report.htmlTables || 0) + 1;
+}
+
+window.htmlExtract = { htmlToBlocks, pickRoot, isChrome };
 
 </script>
 <script>
@@ -2867,7 +3180,7 @@ async function looksLikeArchive(filename, bytes, arrayBuffer) {
   } catch (e) { return false; }
 }
 
-const DOC_MEMBER = /\.(docx|pdf|md|markdown|mdx)$/i;
+const DOC_MEMBER = /\.(docx|pdf|md|markdown|mdx|html?|xhtml)$/i;
 const SPEC_MEMBER = /\.(ya?ml|json)$/i;
 
 /**
@@ -2929,6 +3242,12 @@ async function convertArchive(arrayBuffer, filename, opts) {
   return { files: built.files, report };
 }
 
+function looksLikeHtml(filename, bytes) {
+  if (/\.(html?|xhtml)$/i.test(filename || '')) return true;
+  const head = new TextDecoder('utf-8').decode(bytes.subarray(0, 512)).trim().toLowerCase();
+  return /^<!doctype html|^<html[\s>]|^<\?xml[^>]*>\s*<!doctype html/.test(head);
+}
+
 function looksLikeMarkdown(filename, bytes) {
   if (/\.(md|markdown|mdx|txt)$/i.test(filename || '')) return true;
   // A .docx is a zip and a PDF starts %PDF-; anything else that decodes as
@@ -2961,7 +3280,12 @@ async function convertDocument(arrayBuffer, filename, opts) {
 
   let blocks, zip = null, ctx = null;
 
-  if (opts.forceMarkdown || looksLikeMarkdown(filename, head)) {
+  if (looksLikeHtml(filename, head)) {
+    report.kind = 'html';
+    if (!window.htmlExtract) throw new Error('the HTML reader did not load — reload the page');
+    blocks = window.htmlExtract.htmlToBlocks(
+      new TextDecoder('utf-8').decode(new Uint8Array(arrayBuffer)), report);
+  } else if (opts.forceMarkdown || looksLikeMarkdown(filename, head)) {
     report.kind = 'markdown';
     if (!window.mdClean) throw new Error('the Markdown cleaner did not load — reload the page');
     const text = new TextDecoder('utf-8').decode(new Uint8Array(arrayBuffer));
@@ -3002,7 +3326,7 @@ async function convertDocument(arrayBuffer, filename, opts) {
 
   // "pasted" is a placeholder filename, not a real document title.
   const fallbackTitle = stem === 'pasted' ? '' : stem.replace(/[-_]+/g, ' ').trim();
-  const title = opts.title || report.mdTitle ||
+  const title = opts.title || report.mdTitle || report.htmlTitle ||
                 (zip ? docTitle(zip, fallbackTitle) : fallbackTitle);
   const { urls, files: imageFiles } = zip
     ? collectImages(zip, ctx.rels, blocks, stem, opts.imageDir, report)
@@ -3071,7 +3395,8 @@ function defaultOptions() {
 }
 
 window.docx2readme = { convertDocument, convertDocx: convertDocument, defaultOptions,
-                       looksLikeMarkdown, convertArchive,
+                       looksLikeMarkdown, looksLikeHtml, convertArchive,
+                       escapeInline: esc,
                        makeZip, slugify, normKey, looksLikePdf,
                        DEFAULT_LABEL_HEADINGS, DEFAULT_DROP_SECTIONS };
 
@@ -3106,9 +3431,9 @@ drop.addEventListener('drop', (e) => addFiles(e.dataTransfer.files));
 // after zips were supported.
 const COPY = {
   doc: {
-    drop: 'Drop Word, PDF or a .zip here',
+    drop: 'Drop Word, PDF, HTML or a .zip here',
     hint: 'A zip of folders keeps its structure',
-    hero: 'Drop a Word doc, PDF or .zip to get started',
+    hero: 'Drop a Word doc, PDF, HTML file or .zip to get started',
     sub:  'Everything happens on this machine. Your files are never sent anywhere.',
   },
   md: {
@@ -3127,7 +3452,8 @@ function setMode(next) {
   $('modeDoc').setAttribute('aria-selected', String(!md));
   $('modeMd').setAttribute('aria-selected', String(md));
   const copy = md ? COPY.md : COPY.doc;
-  $('picker').accept = md ? '.md,.markdown,.mdx,.txt,.zip' : '.docx,.pdf,.zip';
+  $('picker').accept = md ? '.md,.markdown,.mdx,.txt,.zip'
+                          : '.docx,.pdf,.html,.htm,.xhtml,.zip';
   $('dropTitle').textContent = copy.drop;
   $('dropHint').textContent = copy.hint;
   $('pasteBox').hidden = !md;
@@ -3155,7 +3481,7 @@ function refreshConvertEnabled() {
   $('convertBtn').disabled = !picked.length && !pastedMarkdown();
 }
 
-const DOC_EXT = /\.(docx|pdf|zip)$/i;
+const DOC_EXT = /\.(docx|pdf|html?|xhtml|zip)$/i;
 const MD_EXT = /\.(md|markdown|mdx|txt)$/i;
 
 async function addFiles(list) {
@@ -3173,7 +3499,7 @@ async function addFiles(list) {
         setStatus(f.name + ' — save it as .docx, PDF or Markdown first.', true);
         continue;
       } else {
-        setStatus(f.name + ' — needs to be .docx, .pdf, .md or a .zip of those.', true);
+        setStatus(f.name + ' — needs to be .docx, .pdf, .html, .md or a .zip of those.', true);
         continue;
       }
     }
@@ -3344,11 +3670,25 @@ function renderResults() {
     if (r.pdfPages) bits.unshift(r.pdfPages + ' PDF page(s) read');
     if (r.mdCodeBlocks) bits.push(r.mdCodeBlocks + ' code block(s) preserved');
     if (r.mdTables) bits.push(r.mdTables + ' table(s) parsed');
+    if (r.htmlTables) bits.push(r.htmlTables + ' table(s) parsed');
+    if (r.htmlCodeBlocks) bits.push(r.htmlCodeBlocks + ' code block(s) kept');
     if (r.pdfTables) bits.push(r.pdfTables + ' table(s) reconstructed');
     if (bits.length) add(escHtml(bits.join(', ')));
     if (r.autocorrectFixes) {
       add('<span class="warn">Repaired ' + r.autocorrectFixes +
           ' Word AutoCorrect character(s) inside code blocks — those snippets would have failed when copied.</span>');
+    }
+    if (r.kind === 'html') {
+      if (r.htmlRoot) add('Read the &lt;' + escHtml(r.htmlRoot) + '&gt; region of the page');
+      if (r.htmlChromeDropped) add(r.htmlChromeDropped + ' navigation / sidebar / footer block(s) dropped');
+      if (r.htmlWordHeadings) add(r.htmlWordHeadings + ' Word heading style(s) promoted to real headings');
+      if (r.htmlWordLists) add(r.htmlWordLists + ' Word pseudo-list paragraph(s) turned into list items');
+      if (r.htmlWordSidecar) add(r.htmlWordSidecar + ' Word sidecar image(s) skipped (spacers and tracking pixels)');
+      if (r.htmlAbsoluteImages) add(r.htmlAbsoluteImages + ' image(s) already point at full URLs and will keep working');
+      if (r.htmlRelativeImages) {
+        add('<span class="warn">' + r.htmlRelativeImages + ' image(s) use relative paths — '
+          + 'host them and replace the paths, or they will not resolve in ReadMe.</span>');
+      }
     }
     if (r.kind === 'archive' && r.gitsync) {
       const g = r.gitsync;
