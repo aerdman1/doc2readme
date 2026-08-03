@@ -24,8 +24,11 @@ const DROP_TAGS = new Set([
   'v:formulas', 'v:path', 'w:sdt', 'xml',
 ]);
 
-// Page furniture. Removed wholesale — an export's sidebar is not documentation.
-const CHROME_TAGS = new Set(['nav', 'aside', 'header', 'footer']);
+// Page furniture. Removed wholesale — an export's sidebar is not
+// documentation. <header> is deliberately not here: plenty of exports wrap the
+// page title in one, so it goes through the same test as a class-named
+// container below.
+const CHROME_TAGS = new Set(['nav', 'aside', 'footer']);
 const CHROME_HINT = /(^|[\s_-])(nav|navbar|sidebar|side-?bar|menu|breadcrumb|toc|table-of-contents|on-this-page|pagination|pager|footer|header|masthead|banner|cookie|consent|skip-link|search|social|share|related|feedback|rate-this|edit-this-page|advert|ad-)([\s_-]|$)/i;
 
 const HEADING = /^h([1-6])$/;
@@ -51,13 +54,28 @@ function msoHeadingLevel(el) {
 }
 const MONO_TAGS = new Set(['code', 'kbd', 'samp', 'tt', 'var']);
 
-function isChrome(el) {
-  if (CHROME_TAGS.has(el.localName)) return true;
-  const id = el.getAttribute('id') || '';
-  const cls = el.getAttribute('class') || '';
+/**
+ * 'semantic' — the markup says so (<nav>, role="navigation"); always chrome.
+ * 'named'    — only the class or id says so; a hint that needs corroborating.
+ */
+function chromeKind(el) {
+  if (CHROME_TAGS.has(el.localName)) return 'semantic';
   const role = el.getAttribute('role') || '';
-  if (/^(navigation|banner|contentinfo|complementary|search)$/i.test(role)) return true;
-  return CHROME_HINT.test(id) || CHROME_HINT.test(cls);
+  if (/^(navigation|banner|contentinfo|complementary|search)$/i.test(role)) return 'semantic';
+  const named = el.localName === 'header' ||
+                CHROME_HINT.test(el.getAttribute('id') || '') ||
+                CHROME_HINT.test(el.getAttribute('class') || '');
+  if (!named) return null;
+  // "article-header", "page-header" and "content-header" hold the page title;
+  // dropping them loses the H1 and nobody can tell why. Navigation is what has
+  // the links — a title block has a heading and almost none.
+  const links = el.querySelectorAll('a[href]').length;
+  const hasHeading = !!el.querySelector('h1, h2, h3, h4, h5, h6');
+  return (links >= 3 || !hasHeading) ? 'named' : null;
+}
+
+function isChrome(el) {
+  return chromeKind(el) !== null;
 }
 
 /** Prefer <main> / <article> when the document has one — that is the content. */
@@ -109,7 +127,7 @@ function inlineOf(node, stats) {
       // Anchors to nowhere, and in-page jumps whose target we are not keeping,
       // are noise; keep the words, drop the link.
       out += (href && !/^#/.test(href) && !/^javascript:/i.test(href))
-        ? '[' + text + '](' + href.replace(/\s/g, '%20') + ')'
+        ? '[' + text + '](' + encodeTarget(href) + ')'
         : text;
       continue;
     }
@@ -138,16 +156,25 @@ function imgMarkdown(el, stats) {
   // almost never shipped alongside the .htm.
   if (WORD_SIDECAR.test(src)) { stats.wordSidecar = (stats.wordSidecar || 0) + 1; return ''; }
   const alt = (el.getAttribute('alt') || '').replace(/[[\]]/g, '');
-  if (/^https?:\/\//i.test(src)) stats.absoluteImages = (stats.absoluteImages || 0) + 1;
-  else stats.relativeImages = (stats.relativeImages || 0) + 1;
-  return '![' + escText(alt) + '](' + src.replace(/\s/g, '%20') + ')';
+  if (/^(https?:)?\/\//i.test(src) || /^data:/i.test(src)) {
+    stats.absoluteImages = (stats.absoluteImages || 0) + 1;
+  } else stats.relativeImages = (stats.relativeImages || 0) + 1;
+  return '![' + escText(alt) + '](' + encodeTarget(src) + ')';
 }
 
 // converter.js owns escaping; reuse it so all four inputs escape identically.
 function escText(text) {
   return window.docx2readme && window.docx2readme.escapeInline
     ? window.docx2readme.escapeInline(text)
-    : String(text || '').replace(/([\\`*[\]<>])/g, '\\$1');
+    : String(text || '').replace(/([\\`*[\]<>{}])/g, '\\$1');
+}
+
+// Spaces and parentheses end a markdown link target early; SharePoint and
+// Confluence URLs are full of both.
+function encodeTarget(url) {
+  return String(url || '').trim().replace(/\s/g, '%20')
+    .replace(/</g, '%3C').replace(/>/g, '%3E')
+    .replace(/\(/g, '%28').replace(/\)/g, '%29');
 }
 
 /* ------------------------------------------------------------------ blocks */
@@ -165,12 +192,24 @@ function htmlToBlocks(html, report) {
   const blocks = [];
   const stats = {};
   let dropped = 0;
+  // A wrapper called "article-header" or "content-header" holds the page
+  // title, not chrome. Anything holding a large share of the page's text is
+  // the page, whatever it is named — drop it and the conversion comes back
+  // empty for no visible reason.
+  const rootChars = (root.textContent || '').trim().length;
 
   const walk = (node, listDepth) => {
     for (const el of node.children) {
       const tag = el.localName;
       if (DROP_TAGS.has(tag)) continue;
-      if (isChrome(el)) { dropped++; continue; }
+      const chrome = chromeKind(el);
+      // A class-name hint never outvotes the fact that this element holds most
+      // of the page's words — that is the page, whatever it is called.
+      if (chrome === 'semantic' ||
+          (chrome === 'named' && (el.textContent || '').trim().length < rootChars * 0.5)) {
+        dropped++;
+        continue;
+      }
 
       // Word's TOC is a run of MsoToc paragraphs — ReadMe builds its own.
       if (MSO_TOC.test(el.getAttribute('class') || '')) { dropped++; continue; }
@@ -218,7 +257,7 @@ function htmlToBlocks(html, report) {
       if (tag === 'table') { pushTable(el, blocks, stats, report); continue; }
 
       if (tag === 'ul' || tag === 'ol') {
-        pushList(el, blocks, stats, tag === 'ol', listDepth || 0);
+        pushList(el, blocks, stats, tag === 'ol', listDepth || 0, report);
         continue;
       }
 
@@ -229,6 +268,15 @@ function htmlToBlocks(html, report) {
       }
 
       if (tag === 'hr' || tag === 'br') continue;
+
+      // An <img> sitting directly in the flow has no child nodes, so the
+      // generic leaf path below renders it as the empty string and the
+      // diagram vanishes without a word in the report.
+      if (tag === 'img') {
+        const md = imgMarkdown(el, stats);
+        if (md) blocks.push({ kind: 'para', text: md, images: [] });
+        continue;
+      }
 
       if (tag === 'figure') {
         const img = el.querySelector('img');
@@ -260,20 +308,29 @@ function htmlToBlocks(html, report) {
   return blocks;
 }
 
-function pushList(listEl, blocks, stats, ordered, depth) {
+function pushList(listEl, blocks, stats, ordered, depth, report) {
   for (const li of listEl.children) {
     if (li.localName !== 'li') continue;
     const nested = [...li.children].filter((c) => c.localName === 'ul' || c.localName === 'ol');
+    // A <pre> inside a list item is a code sample. Flattening it into the
+    // sentence loses the fence, the language and every line break in it.
+    const pres = [...li.children].filter((c) => c.localName === 'pre');
     const clone = li.cloneNode(true);
     for (const n of [...clone.children]) {
-      if (n.localName === 'ul' || n.localName === 'ol') n.remove();
+      if (/^(ul|ol|pre)$/.test(n.localName)) n.remove();
     }
     const text = inlineOf(clone, stats).replace(/\s*\n\s*/g, ' ').trim();
     if (text) {
       blocks.push({ kind: 'list', text, level: Math.min(3, depth), ordered, images: [] });
     }
+    for (const pre of pres) {
+      const code = (pre.textContent || '').replace(/\s+$/, '');
+      if (!code.trim()) continue;
+      blocks.push({ kind: 'code', text: code, lang: langFromClass(pre), images: [] });
+      if (report) report.htmlCodeBlocks = (report.htmlCodeBlocks || 0) + 1;
+    }
     for (const sub of nested) {
-      pushList(sub, blocks, stats, sub.localName === 'ol', Math.min(3, depth + 1));
+      pushList(sub, blocks, stats, sub.localName === 'ol', Math.min(3, depth + 1), report);
     }
   }
 }
@@ -298,4 +355,4 @@ function pushTable(tableEl, blocks, stats, report) {
   report.htmlTables = (report.htmlTables || 0) + 1;
 }
 
-window.htmlExtract = { htmlToBlocks, pickRoot, isChrome };
+window.htmlExtract = { htmlToBlocks, pickRoot, isChrome, chromeKind };

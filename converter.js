@@ -190,6 +190,10 @@ function makeZip(files) {
     ldv.setUint16(4, 20, true);
     ldv.setUint16(6, 0x0800, true);           // UTF-8 filename flag
     ldv.setUint16(8, 0, true);                // stored
+    ldv.setUint16(10, 0, true);               // 00:00:00
+    ldv.setUint16(12, 0x0021, true);          // 1980-01-01; 0 is not a legal
+                                              // DOS date and some unzippers
+                                              // warn or refuse on it
     ldv.setUint32(14, crc, true);
     ldv.setUint32(18, body.length, true);
     ldv.setUint32(22, body.length, true);
@@ -203,7 +207,9 @@ function makeZip(files) {
     cdv.setUint16(4, 20, true);
     cdv.setUint16(6, 20, true);
     cdv.setUint16(8, 0x0800, true);
-    cdv.setUint16(10, 0, true);
+    cdv.setUint16(10, 0, true);               // stored
+    cdv.setUint16(12, 0, true);               // 00:00:00
+    cdv.setUint16(14, 0x0021, true);          // 1980-01-01
     cdv.setUint32(16, crc, true);
     cdv.setUint32(20, body.length, true);
     cdv.setUint32(24, body.length, true);
@@ -249,15 +255,34 @@ function slugify(v) {
 // underscores as emphasis, so escaping them litters `client\_credentials`
 // through every API doc; `|` only matters inside a table, where renderTable
 // escapes it.
-const MD_SPECIAL = /([\\`*\[\]<>])/g;
+//
+// `{` and `}` are here for the same reason `<` and `>` are. ReadMe compiles
+// pages as MDX, where a brace opens a JavaScript expression: a sentence
+// containing {"grant_type": "client_credentials"} does not render as text, it
+// is evaluated, and the page fails to build. Backslash-escaping is the fix and
+// is invariant under plain CommonMark, which renders \{ as {.
+const MD_SPECIAL = /([\\`*\[\]<>{}])/g;
 const LONE_UNDERSCORE = /(?<![0-9A-Za-z])_|_(?![0-9A-Za-z])/g;
-// A bare URL is autolinked by GFM, and a backslash-escaped angle bracket
-// *inside* that link still reaches MDX as a tag. Percent-encode instead —
-// which is what those characters should be in a URL anyway.
+// A bare URL is autolinked by GFM, and a backslash escape *inside* that link
+// is not processed — `https://x/\{id\}` autolinks with the backslashes
+// visible, and an escaped angle bracket still reaches MDX as a tag.
+// Percent-encode instead, which is what these characters should be in a URL
+// anyway.
+const URL_UNSAFE = { '<': '%3C', '>': '%3E', '{': '%7B', '}': '%7D' };
 const encodeUrlAngles = (t) =>
   (t || '').replace(/https?:\/\/[^\s)]*/g,
-    (u) => u.replace(/</g, '%3C').replace(/>/g, '%3E'));
+    (u) => u.replace(/[<>{}]/g, (c) => URL_UNSAFE[c]));
 const esc = (t) => encodeUrlAngles(t || '').replace(MD_SPECIAL, '\\$1').replace(LONE_UNDERSCORE, '\\_');
+
+// A markdown link target is delimited by parentheses and ended by whitespace,
+// so a URL containing either silently truncates the link. Word hyperlinks to
+// SharePoint and Confluence routinely contain both.
+function encodeLinkTarget(url) {
+  return String(url || '').trim()
+    .replace(/[\s]/g, '%20')
+    .replace(/</g, '%3C').replace(/>/g, '%3E')
+    .replace(/\(/g, '%28').replace(/\)/g, '%29');
+}
 
 function wrapEmph(piece, marker) {
   const stripped = piece.trim();
@@ -490,7 +515,7 @@ function renderInline(para, ctx, plainMode) {
       else if (target) {
         const lead = text.slice(0, text.length - text.trimStart().length);
         const trail = text.slice(text.trimEnd().length);
-        spans.push({ key: null, rendered: lead + '[' + esc(text.trim()) + '](' + target + ')' + trail });
+        spans.push({ key: null, rendered: lead + '[' + esc(text.trim()) + '](' + encodeLinkTarget(target) + ')' + trail });
       } else spans.push({ key: null, rendered: esc(text) });
     } else if (isW(child, 'smartTag') || isW(child, 'sdt') || isW(child, 'ins')) {
       for (const run of child.getElementsByTagNameNS(W, 'r')) emitRun(run);
@@ -800,6 +825,11 @@ function inferLanguage(text, recentHeading) {
 
 function detectCallout(text) {
   let inner = text.trim();
+  // "**Nota:** guarde el token" is the same paragraph as "Nota: guarde el
+  // token" — writers bold the label far more often than not, and matching
+  // only the unbolded form missed most real callouts.
+  inner = inner.replace(/^(\*{1,3}|_{1,2})\s*([^*_\n]{1,40}?)\s*\1\s*/, (m, mark, label) =>
+    (/[:.—–-]$/.test(label) ? label + ' ' : label + ': '));
   for (const marker of ['***', '**', '*', '_']) {
     if (inner.length > 2 * marker.length && inner.startsWith(marker) && inner.endsWith(marker)) {
       inner = inner.slice(marker.length, -marker.length).trim();
@@ -844,7 +874,10 @@ function demoteLabelHeadings(blocks, labels, labelStyle, report) {
       if (!title) { report.emptyHeadings = (report.emptyHeadings || 0) + 1; continue; }
       if (labels.has(normKey(title)) || labels.has(labelStem(title))) {
         (report.demoted = report.demoted || []).push(title);
-        out.push({ kind: 'para', text: labelStyle === 'plain' ? title : '**' + title + '**', images: [] });
+        // A heading escapes at render time; a paragraph does not, so a label
+        // like "Response <200>" would reach MDX raw once demoted.
+        const safe = escapeHeading(title);
+        out.push({ kind: 'para', text: labelStyle === 'plain' ? safe : '**' + safe + '**', images: [] });
         continue;
       }
       block.text = title;
@@ -871,11 +904,24 @@ function remapHeadingLevels(blocks, topLevel, maxLevel, report) {
 // ---------------------------------------------------------------------------
 
 // ReadMe compiles pages as MDX, where a bare <angle> is parsed as a JSX tag
-// and a malformed one takes the whole page down with a syntax error. Heading
-// text is emitted verbatim (escaping it earlier would corrupt slugs and label
-// matching), so it gets escaped here at the last moment.
+// and a bare {brace} as a JavaScript expression — either takes the whole page
+// down with a syntax error. Heading text is emitted verbatim (escaping it
+// earlier would corrupt slugs and label matching), so it gets escaped here at
+// the last moment. Already-escaped characters are left alone so Markdown input
+// that was written correctly does not come out with doubled backslashes.
 function escapeHeading(text) {
-  return (text || '').replace(/([<>])/g, '\\$1');
+  return String(text || '').replace(/(\\?)([<>{}])/g, (m, bs, ch) => (bs ? m : '\\' + ch));
+}
+
+// A fenced block has to open with more backticks than any fence inside it, or
+// the first inner fence closes it and the rest of the snippet lands in the
+// page as prose. Markdown documenting Markdown hits this immediately.
+function fenceFor(text) {
+  let n = 3;
+  for (const m of String(text || '').matchAll(/^ {0,3}(`{3,})/gm)) {
+    n = Math.max(n, m[1].length + 1);
+  }
+  return '`'.repeat(n);
 }
 
 function renderTable(rows) {
@@ -883,8 +929,13 @@ function renderTable(rows) {
   const width = Math.max(...rows.map((r) => r.length));
   rows = rows.map((r) => r.concat(Array(width - r.length).fill('')));
   // ReadMe bolds the header row itself; strip Word's manual bold so it doesn't
-  // render as literal asterisks.
-  const header = rows[0].map((c) => c.trim().replace(/^\*\*(.*)\*\*$/, '$1') || ' ');
+  // render as literal asterisks. Only when the whole cell is one bold span —
+  // "**a** and **b**" is not, and stripping its ends mangles it to "a** and **b".
+  const header = rows[0].map((c) => {
+    const t = c.trim();
+    const m = /^\*\*([\s\S]+)\*\*$/.exec(t);
+    return (m && !m[1].includes('**') ? m[1] : t) || ' ';
+  });
   let body = rows.slice(1);
   if (!body.length) body = [Array(width).fill('')];
   const lines = [
@@ -915,7 +966,14 @@ function renderCallout(block, style) {
 function renderBlocks(blocks, imageUrls, calloutStyle) {
   const out = [];
   let recentHeading = '';
+  // listIndents[level] is the exact indent a child at that level needs. A
+  // nested item has to start at or past its parent's *content* column — three
+  // for "1. ", two for "- " — or CommonMark reads it as a sibling and the
+  // nesting silently disappears. A flat two spaces per level gets bullets
+  // right and every numbered list wrong.
+  const listIndents = [''];
   for (const block of blocks) {
+    if (block.kind !== 'list' && block.kind !== 'blank') listIndents.length = 1;
     if (block.kind === 'blank') continue;
     if (block.kind === 'heading') {
       out.push('#'.repeat(block.level) + ' ' + escapeHeading(block.text));
@@ -927,14 +985,22 @@ function renderBlocks(blocks, imageUrls, calloutStyle) {
       }
       if (text.trim()) out.push(text);
     } else if (block.kind === 'list') {
-      out.push('  '.repeat(block.level) + (block.ordered ? '1.' : '-') + ' ' + block.text);
+      const level = Math.max(0, Math.min(block.level || 0, listIndents.length - 1));
+      const indent = listIndents[level];
+      const marker = block.ordered ? '1.' : '-';
+      // A hard break inside an item would end the list; ReadMe renders <br />.
+      const text = String(block.text || '').replace(/\s*\n\s*/g, '<br />');
+      out.push(indent + marker + ' ' + text);
+      listIndents.length = level + 1;
+      listIndents.push(indent + ' '.repeat(marker.length + 1));
     } else if (block.kind === 'callout') {
       out.push(renderCallout(block, calloutStyle));
     } else if (block.kind === 'code') {
       // Markdown input already carries its language; don't re-guess it.
       const lang = block.lang !== undefined ? block.lang
                                             : inferLanguage(block.text, recentHeading);
-      out.push('```' + lang + '\n' + block.text + '\n```');
+      const fence = fenceFor(block.text);
+      out.push(fence + lang + '\n' + block.text + '\n' + fence);
     } else if (block.kind === 'table') {
       out.push(renderTable(block.rows));
     }
@@ -964,17 +1030,42 @@ function splitBlocks(blocks, level) {
   return sections.filter((s) => s.title || s.blocks.some((b) => b.kind !== 'blank'));
 }
 
-const yamlStr = (v) => '"' + String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+// A newline inside a double-quoted YAML scalar is legal but folds; a title
+// carrying one from a Word line break would silently lose the rest.
+const yamlStr = (v) => '"' + String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+  .replace(/[\r\n]+/g, ' ').trim() + '"';
 
-function frontmatter(title, extra) {
+function frontmatter(title, extra, carry) {
   const lines = ['---', 'title: ' + yamlStr(title)];
   for (const [k, v] of Object.entries(extra || {})) {
     if (v === null || v === undefined) continue;
     lines.push(k + ': ' + (typeof v === 'boolean' ? String(v) : yamlStr(v)));
   }
+  for (const l of carry || []) lines.push(l);
   lines.push('---');
   return lines.join('\n') + '\n\n';
 }
+
+/**
+ * The source page's own frontmatter, minus the keys this tool sets itself.
+ * Nested blocks (`metadata:`, `next:`) come through whole — dropping a key
+ * means dropping its indented children with it, not just its first line.
+ */
+function carryFrontmatter(raw, drop) {
+  const out = [];
+  let skipping = false;
+  for (const line of String(raw || '').split('\n')) {
+    const key = /^([A-Za-z_][\w.-]*)\s*:/.exec(line);
+    if (key) skipping = drop.has(key[1].toLowerCase());
+    else if (!/^\s+\S/.test(line)) skipping = false;   // not a continuation
+    if (!skipping && line.trim()) out.push(line.replace(/\s+$/, ''));
+  }
+  return out;
+}
+
+// title and hidden are set from the options; slug is the filename in a
+// git-synced repo, not a frontmatter field.
+const OWNED_FRONTMATTER = new Set(['title', 'hidden', 'slug']);
 
 // ---------------------------------------------------------------------------
 // Driver
@@ -1026,26 +1117,30 @@ function collectImages(zip, rels, blocks, stem, imageDir, report) {
   return { urls, files };
 }
 
-/** A zip that is NOT a .docx — i.e. a folder of documents someone zipped. */
+/**
+ * A zip that is NOT a .docx — i.e. a folder of documents someone zipped.
+ * Returns the already-parsed zip so the caller does not decompress it twice;
+ * on a 40 MB drop that second pass is seconds of frozen tab.
+ */
 async function looksLikeArchive(filename, bytes, arrayBuffer) {
-  if (!(bytes[0] === 0x50 && bytes[1] === 0x4b)) return false;
-  if (/\.docx$/i.test(filename || '')) return false;
+  if (!(bytes[0] === 0x50 && bytes[1] === 0x4b)) return null;
+  if (/\.docx$/i.test(filename || '')) return null;
   try {
     const zip = await readZip(arrayBuffer);
-    return !zip.has('word/document.xml');
-  } catch (e) { return false; }
+    return zip.has('word/document.xml') ? null : zip;
+  } catch (e) { return null; }
 }
 
-const DOC_MEMBER = /\.(docx|pdf|md|markdown|mdx|html?|xhtml)$/i;
+const DOC_MEMBER = /\.(docx|pdf|md|markdown|mdx|txt|html?|xhtml)$/i;
 const SPEC_MEMBER = /\.(ya?ml|json)$/i;
 
 /**
  * Convert every document inside a dropped .zip, preserving its folder layout,
  * and lay the results out the way ReadMe git-sync expects.
  */
-async function convertArchive(arrayBuffer, filename, opts) {
+async function convertArchive(arrayBuffer, filename, opts, parsedZip) {
   const report = { source: filename, kind: 'archive', members: [], warnings: [] };
-  const zip = await readZip(arrayBuffer);
+  const zip = parsedZip || await readZip(arrayBuffer);
 
   const docs = [], specs = [];
   const names = [...zip.keys()].sort();
@@ -1062,8 +1157,10 @@ async function convertArchive(arrayBuffer, filename, opts) {
     if (!DOC_MEMBER.test(base)) continue;
 
     const bytes = zip.get(name);
-    const sub = { ...opts, category: '', split: 0, noFrontmatter: false };
-    sub.forceMarkdown = /\.(md|markdown|mdx)$/i.test(base);
+    // `title` is per-document; inheriting the run-wide one would stamp the
+    // same title on every page in the zip.
+    const sub = { ...opts, category: '', split: 0, noFrontmatter: false, title: '' };
+    sub.forceMarkdown = /\.(md|markdown|mdx|txt)$/i.test(base);
     try {
       const res = await convertDocument(bytes.buffer.slice(
         bytes.byteOffset, bytes.byteOffset + bytes.byteLength), base, sub);
@@ -1072,8 +1169,15 @@ async function convertArchive(arrayBuffer, filename, opts) {
       const stem = base.replace(/\.[^.]+$/, '');
       docs.push({
         srcPath: name,
-        slug: slugify(window.gitSync.stripNumPrefix(stem)),
+        // A page that already declared a slug keeps it: the filename is the
+        // slug in a synced repo, so renaming breaks its published URL.
+        slug: String((res.report.mdMeta || {}).slug || '').trim() ||
+              slugify(window.gitSync.stripNumPrefix(stem)),
         body: page.text,
+        // Images extracted from a member .docx travel with it. Without this
+        // the page keeps its ![](images/…) references and the zip contains no
+        // such file — a broken image on every synced page.
+        assets: res.files.filter((f) => f.data !== undefined),
       });
       report.members.push({ name, kind: res.report.kind, ok: true });
       for (const k of ['codeBlocks', 'callouts', 'images', 'autocorrectFixes',
@@ -1086,11 +1190,21 @@ async function convertArchive(arrayBuffer, filename, opts) {
   }
 
   if (!docs.length) {
-    throw new Error('no .docx, .pdf or .md files found inside this zip');
+    throw new Error('no .docx, .pdf, .html or .md files found inside this zip');
+  }
+
+  // Everything in ReadMe lives under a category. A zip of loose files has no
+  // folder to name one after, so rather than drop those documents (which is
+  // what silently happened), put them somewhere obvious and say so.
+  const fallbackCategory = (opts.category || '').trim() || 'Documentation';
+  if (docs.some((d) => !String(d.srcPath || '').includes('/'))) {
+    (report.notes = report.notes || []).push(
+      'documents at the top level of the zip went into the "' + fallbackCategory +
+      '" category — set a category folder to name it something else.');
   }
 
   const built = window.gitSync.buildGitSync(docs, specs, {
-    defaultCategory: opts.category || '',
+    defaultCategory: fallbackCategory,
   });
   report.gitsync = built.report;
   report.warnings.push(...built.report.warnings);
@@ -1107,17 +1221,38 @@ function looksLikeHtml(filename, bytes) {
 function looksLikeMarkdown(filename, bytes) {
   if (/\.(md|markdown|mdx|txt)$/i.test(filename || '')) return true;
   // A .docx is a zip and a PDF starts %PDF-; anything else that decodes as
-  // text is treated as Markdown rather than rejected outright.
+  // text is treated as Markdown rather than rejected outright, so a file with
+  // no extension or an unfamiliar one still converts instead of failing with
+  // "not a zip".
   if (bytes[0] === 0x50 && bytes[1] === 0x4b) return false;   // PK zip
   const head = new TextDecoder('latin1').decode(bytes.subarray(0, 512));
   if (head.indexOf('%PDF-') !== -1) return false;
-  return false;
+  if (head.charCodeAt(0) === 0xd0 && head.charCodeAt(1) === 0xcf) return false;  // OLE2 .doc
+  // A NUL in the first bytes means binary; text formats never contain one.
+  for (let i = 0; i < Math.min(bytes.length, 512); i++) if (bytes[i] === 0) return false;
+  return true;
 }
 
 function looksLikePdf(bytes) {
   // %PDF- may sit a few bytes in on files with a junk prefix.
   const head = new TextDecoder('latin1').decode(bytes.subarray(0, 1024));
   return head.indexOf('%PDF-') !== -1;
+}
+
+/**
+ * The shared tail of all four readers. Each one produces Block[]; from here
+ * on the treatment is identical, which is the whole reason they share a block
+ * model. Order matters: sections are dropped before the cover is found,
+ * code is merged before callouts are detected in what is left, and headings
+ * are remapped last so demoted labels are already gone.
+ */
+function applyPasses(blocks, opts, report) {
+  blocks = dropTocAndSections(blocks, opts.dropSections, report);
+  if (!opts.keepCover) blocks = dropCover(blocks, report);
+  blocks = mergeCodeBlocks(blocks, report);
+  if (!opts.noCallouts) blocks = convertCallouts(blocks, report);
+  blocks = demoteLabelHeadings(blocks, opts.labels, opts.labelStyle, report);
+  return remapHeadingLevels(blocks, opts.topLevel, opts.maxLevel, report);
 }
 
 /**
@@ -1130,8 +1265,9 @@ async function convertDocument(arrayBuffer, filename, opts) {
   const report = { source: filename };
   const head = new Uint8Array(arrayBuffer, 0, Math.min(1024, arrayBuffer.byteLength));
 
-  if (await looksLikeArchive(filename, head, arrayBuffer)) {
-    return convertArchive(arrayBuffer, filename, opts);
+  const archiveZip = await looksLikeArchive(filename, head, arrayBuffer);
+  if (archiveZip) {
+    return convertArchive(arrayBuffer, filename, opts, archiveZip);
   }
 
   let blocks, zip = null, ctx = null;
@@ -1172,13 +1308,7 @@ async function convertDocument(arrayBuffer, filename, opts) {
   }
 
   report.blocksIn = blocks.length;
-
-  blocks = dropTocAndSections(blocks, opts.dropSections, report);
-  if (!opts.keepCover) blocks = dropCover(blocks, report);
-  blocks = mergeCodeBlocks(blocks, report);
-  if (!opts.noCallouts) blocks = convertCallouts(blocks, report);
-  blocks = demoteLabelHeadings(blocks, opts.labels, opts.labelStyle, report);
-  blocks = remapHeadingLevels(blocks, opts.topLevel, opts.maxLevel, report);
+  blocks = applyPasses(blocks, opts, report);
 
   // "pasted" is a placeholder filename, not a real document title.
   const fallbackTitle = stem === 'pasted' ? '' : stem.replace(/[-_]+/g, ' ').trim();
@@ -1187,6 +1317,13 @@ async function convertDocument(arrayBuffer, filename, opts) {
   const { urls, files: imageFiles } = zip
     ? collectImages(zip, ctx.rels, blocks, stem, opts.imageDir, report)
     : { urls: {}, files: [] };
+
+  // Markdown that already carried ReadMe frontmatter keeps it — excerpt, icon,
+  // deprecated, the whole nested metadata block. And its slug drives the
+  // filename, because in a synced repo the filename *is* the slug and
+  // renaming the file breaks every inbound link to a published page.
+  const carried = carryFrontmatter((report.mdMeta || {}).__raw, OWNED_FRONTMATTER);
+  const carriedSlug = String((report.mdMeta || {}).slug || '').trim();
 
   const prefix = opts.category ? opts.category + '/' : '';
   const out = [];
@@ -1199,25 +1336,32 @@ async function convertDocument(arrayBuffer, filename, opts) {
         'split found no H' + splitLevel + ' headings; wrote a single page.');
       sections = [{ title, blocks }];
     }
+    // _order.yaml carries the order, so the filenames do not need to — and
+    // must not, because in a synced repo the filename is the slug and
+    // "01-alpha.md" would publish at /01-alpha while _order.yaml said "alpha".
     const order = [];
-    sections.forEach((sec, n) => {
+    const used = new Set();
+    sections.forEach((sec) => {
       const secTitle = sec.title || title;
-      const slug = slugify(secTitle);
+      let slug = slugify(secTitle);
+      if (used.has(slug)) {
+        let n = 2;
+        while (used.has(slug + '-' + n)) n++;
+        slug = slug + '-' + n;
+      }
+      used.add(slug);
       const body = renderBlocks(sec.blocks, urls, opts.calloutStyle);
       const head = opts.noFrontmatter ? ''
-        : frontmatter(secTitle, opts.hidden ? { slug, hidden: true } : { slug });
-      out.push({
-        path: prefix + String(n + 1).padStart(2, '0') + '-' + slug + '.md',
-        text: head + body,
-      });
+        : frontmatter(secTitle, opts.hidden ? { hidden: true } : {});
+      out.push({ path: prefix + slug + '.md', text: head + body });
       order.push(slug);
     });
     out.push({ path: prefix + '_order.yaml', text: order.map((s) => '- ' + s + '\n').join('') });
   } else {
     const body = renderBlocks(blocks, urls, opts.calloutStyle);
-    const slug = slugify(stem);
+    const slug = carriedSlug || slugify(stem);
     const head = opts.noFrontmatter ? ''
-      : frontmatter(title, opts.hidden ? { slug, hidden: true } : { slug });
+      : frontmatter(title, opts.hidden ? { hidden: true } : {}, carried);
     out.push({ path: prefix + slug + '.md', text: head + body });
   }
 
@@ -1252,6 +1396,7 @@ function defaultOptions() {
 
 window.docx2readme = { convertDocument, convertDocx: convertDocument, defaultOptions,
                        looksLikeMarkdown, looksLikeHtml, convertArchive,
+                       applyPasses, renderBlocks,
                        escapeInline: esc,
                        makeZip, slugify, normKey, looksLikePdf,
                        DEFAULT_LABEL_HEADINGS, DEFAULT_DROP_SECTIONS };

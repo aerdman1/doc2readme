@@ -1,0 +1,16 @@
+{
+  "name": "doc2readme",
+  "version": "1.0.0",
+  "description": "Word, PDF, HTML and Markdown to ReadMe-ready Markdown, entirely in the browser.",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "node --test tests/",
+    "build": "python3 build.py"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3"
+  },
+  "private": true
+}

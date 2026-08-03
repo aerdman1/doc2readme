@@ -138,6 +138,7 @@ function buildGitSync(docs, specs, opts) {
     for (const k of kids) {
       if (k.kind === 'page') {
         out.push({ path: basePath + '/' + k.slug + '.md', text: k.entry.doc.body });
+        emitAssets(k.entry.doc, basePath);
         report.pages++;
       } else {
         // ReadMe caps nesting at three page levels below a category.
@@ -150,6 +151,7 @@ function buildGitSync(docs, specs, opts) {
         const folder = basePath + '/' + k.slug;
         if (k.sub.index) {
           out.push({ path: folder + '/index.md', text: k.sub.index.doc.body });
+          emitAssets(k.sub.index.doc, folder);
         } else {
           out.push({ path: folder + '/index.md', text: stubPage(k.name) });
           report.stubs++;
@@ -163,9 +165,27 @@ function buildGitSync(docs, specs, opts) {
   function flattenInto(node, basePath, prefix) {
     for (const f of node.files) {
       out.push({ path: basePath + '/' + prefix + '-' + f.doc.slug + '.md', text: f.doc.body });
+      emitAssets(f.doc, basePath);
+      report.pages++;
+    }
+    if (node.index) {
+      out.push({ path: basePath + '/' + prefix + '.md', text: node.index.doc.body });
+      emitAssets(node.index.doc, basePath);
       report.pages++;
     }
     for (const [name, sub] of node.dirs) flattenInto(sub, basePath, prefix + '-' + slugifyName(name));
+  }
+
+  /* Images extracted from a member document are written beside the page that
+   * references them, so the relative ![](images/…) path in the body resolves.
+   * Dropping them left every synced page with a broken image. */
+  function emitAssets(doc, basePath) {
+    for (const asset of doc.assets || []) {
+      const path = basePath + '/' + asset.path;
+      if (out.some((f) => f.path === path)) continue;
+      out.push({ path, data: asset.data });
+      report.assets = (report.assets || 0) + 1;
+    }
   }
 
   const categories = [...root.dirs.keys()];

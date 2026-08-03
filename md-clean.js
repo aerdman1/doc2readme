@@ -49,34 +49,65 @@ function escapeStrayTags(text, stats) {
   return parts.map((part, i) => (i % 2 ? part : escapeOutsideCode(part, stats))).join('');
 }
 
+// `<https://example.com>` and `<user@host>` are CommonMark autolinks, not
+// tags. Escaping them turns a working link into literal angle brackets.
+const AUTOLINK = /^<[A-Za-z][A-Za-z0-9+.-]*:[^\s<>]*>$|^<[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+>$/;
+
+/* One pass, so each construct consumes its own text and the next rule never
+ * sees inside it — the braces of `<Cards columns={2}>` belong to the tag, and
+ * a brace already escaped by the author must not be escaped twice. */
+const SCAN = new RegExp([
+  '\\\\[\\s\\S]',                                   // already escaped: leave it
+  '\\{/\\*[\\s\\S]*?\\*/\\}',                       // {/* MDX comment */}
+  '<!--[\\s\\S]*?-->',                              // HTML comment: illegal in MDX
+  '<\\/?[A-Za-z][A-Za-z0-9._-]*(?:"[^"]*"|\'[^\']*\'|[^\'">])*\\/?>',
+  '[{}]',
+].join('|'), 'g');
+
+const TAG_PARTS = /^<\/?([A-Za-z][A-Za-z0-9._-]*)((?:"[^"]*"|'[^']*'|[^'">])*)\/?>$/;
+
 function escapeOutsideCode(text, stats) {
-  return String(text || '').replace(
-    /<\/?([A-Za-z][A-Za-z0-9._-]*)((?:"[^"]*"|'[^']*'|[^'">])*)\/?>/g,
-    (m, name, attrs) => {
-      if (!isKnownTag(name)) {
-        stats.escapedTags = (stats.escapedTags || 0) + 1;
-        return m.replace(/</g, '\\<').replace(/>/g, '\\>');
-      }
-      // A known tag name is only real markup if it actually closes. Prose like
-      // "a real <Callout> is fine" is an unterminated JSX element and fails to
-      // build, so treat a lone opening tag as text.
-      const lower = name.toLowerCase();
-      if (!VOID_TAGS.has(lower) && m[1] !== '/' && !/\/\s*>$/.test(m)) {
-        const closes = new RegExp('</\\s*' + name + '\\s*>', 'i').test(text);
-        if (!closes) {
-          stats.escapedTags = (stats.escapedTags || 0) + 1;
-          return m.replace(/</g, '\\<').replace(/>/g, '\\>');
-        }
-      }
-      if (VOID_TAGS.has(name.toLowerCase()) && !/\/\s*>$/.test(m) && m[1] !== '/') {
-        stats.selfClosed = (stats.selfClosed || 0) + 1;
-        return '<' + name + attrs.replace(/\s+$/, '') + ' />';
-      }
-      return m;
-    });
+  return String(text || '').replace(SCAN, (m) => {
+    if (m[0] === '\\') return m;
+    if (m.startsWith('{/*')) return m;
+    if (m.startsWith('<!--')) {
+      // MDX has no HTML comment; leaving one in fails the build outright.
+      stats.comments = (stats.comments || 0) + 1;
+      return '';
+    }
+    if (m === '{' || m === '}') {
+      stats.escapedBraces = (stats.escapedBraces || 0) + 1;
+      return '\\' + m;
+    }
+    if (AUTOLINK.test(m)) return m;
+    const parts = TAG_PARTS.exec(m);
+    if (!parts) return m;
+    return escapeTag(m, parts[1], parts[2], text, stats);
+  });
+}
+
+function escapeTag(m, name, attrs, text, stats) {
+  const literal = () => {
+    stats.escapedTags = (stats.escapedTags || 0) + 1;
+    return m.replace(/</g, '\\<').replace(/>/g, '\\>');
+  };
+  if (!isKnownTag(name)) return literal();
+  const lower = name.toLowerCase();
+  // A known tag name is only real markup if it actually closes. Prose like
+  // "a real <Callout> is fine" is an unterminated JSX element and fails to
+  // build, so treat a lone opening tag as text.
+  if (!VOID_TAGS.has(lower) && m[1] !== '/' && !/\/\s*>$/.test(m)) {
+    if (!new RegExp('</\\s*' + name + '\\s*>', 'i').test(text)) return literal();
+  }
+  if (VOID_TAGS.has(lower) && !/\/\s*>$/.test(m) && m[1] !== '/') {
+    stats.selfClosed = (stats.selfClosed || 0) + 1;
+    return '<' + name + attrs.replace(/\s+$/, '') + ' />';
+  }
+  return m;
 }
 
 const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
+const LIST_ITEM = /^(\s*)([-*+]|\d{1,3}[.)])\s+(.*)$/;
 
 function stripFrontmatter(text, meta) {
   const m = FRONTMATTER.exec(text);
@@ -85,6 +116,11 @@ function stripFrontmatter(text, meta) {
     const kv = /^([A-Za-z_][\w.-]*)\s*:\s*(.*)$/.exec(line);
     if (kv) meta[kv[1]] = kv[2].trim().replace(/^["']|["']$/g, '');
   }
+  // Keep the block verbatim as well. Reading it key-by-key loses everything
+  // nested — `metadata:` with its SEO title, description and keywords, and
+  // `next:` with its recommended pages — and a page that round-trips through
+  // here should not come out stripped of its own settings.
+  meta.__raw = m[1];
   return text.slice(m[0].length);
 }
 
@@ -114,7 +150,8 @@ const CALLOUT_GLYPHS = {
 function markdownToBlocks(text, report) {
   const meta = {};
   let src = stripFrontmatter(String(text || '').replace(/\r\n?/g, '\n'), meta);
-  if (Object.keys(meta).length) report.mdFrontmatter = Object.keys(meta);
+  const metaKeys = Object.keys(meta).filter((k) => k !== '__raw');
+  if (metaKeys.length) report.mdFrontmatter = metaKeys;
 
   const lines = src.split('\n');
   const blocks = [];
@@ -217,15 +254,38 @@ function markdownToBlocks(text, report) {
     if (/^\s*(\*\s*){3,}$|^\s*(-\s*){3,}$|^\s*(_\s*){3,}$/.test(line)) { i++; continue; }
 
     // list
-    const li = /^(\s*)([-*+]|\d{1,3}[.)])\s+(.*)$/.exec(line);
-    if (li) {
+    if (LIST_ITEM.test(line)) {
+      // Nesting comes from the *sequence* of indent columns, not from dividing
+      // by a fixed two. Authors indent nested items by two, three or four
+      // spaces and every one of those means "one level deeper"; the old
+      // divisor turned a four-space child into a grandchild and a three-space
+      // one into a sibling.
+      const cols = [];
       while (i < lines.length) {
-        const m2 = /^(\s*)([-*+]|\d{1,3}[.)])\s+(.*)$/.exec(lines[i]);
-        if (!m2) break;
+        const m2 = LIST_ITEM.exec(lines[i]);
+        if (!m2) {
+          const last = blocks[blocks.length - 1];
+          // A blank line inside a list is a loose list, not the end of it.
+          if (!lines[i].trim() && LIST_ITEM.test(lines[i + 1] || '')) { i++; continue; }
+          // A wrapped continuation line belongs to the item above, not to a
+          // new paragraph sitting after the list.
+          if (lines[i].trim() && /^\s+\S/.test(lines[i]) && last && last.kind === 'list') {
+            last.text += ' ' + escapeStrayTags(lines[i].trim(), stats);
+            i++;
+            continue;
+          }
+          break;
+        }
+        const col = m2[1].replace(/\t/g, '    ').length;
+        if (!cols.length) cols.push(col);
+        else {
+          while (cols.length > 1 && col < cols[cols.length - 1]) cols.pop();
+          if (col > cols[cols.length - 1]) cols.push(col);
+        }
         blocks.push({
           kind: 'list',
           text: escapeStrayTags(m2[3].trim(), stats),
-          level: Math.min(3, Math.floor(m2[1].replace(/\t/g, '  ').length / 2)),
+          level: Math.min(3, cols.length - 1),
           ordered: /\d/.test(m2[2]),
           images: [],
         });
@@ -247,7 +307,12 @@ function markdownToBlocks(text, report) {
 
   if (stats.escapedTags) report.mdEscapedTags = stats.escapedTags;
   if (stats.selfClosed) report.mdSelfClosed = stats.selfClosed;
+  if (stats.escapedBraces) report.mdEscapedBraces = stats.escapedBraces;
+  if (stats.comments) report.mdComments = stats.comments;
   report.mdTitle = meta.title || '';
+  // The caller carries slug/excerpt/order through to the new frontmatter;
+  // regenerating a slug would break inbound links to an already-live page.
+  report.mdMeta = meta;
   return blocks;
 }
 

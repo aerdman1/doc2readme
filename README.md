@@ -30,9 +30,12 @@ quotes into curly ones as someone types a cURL command. It looks fine in Word
 and fails the moment a developer copies it. Repaired inside code blocks.
 
 **Output is valid MDX.** ReadMe builds pages as MDX, where a stray
-`<YOUR_API_KEY>` in body text is read as a JSX tag and takes the whole page
-down. Everything is escaped so that can't happen — checked against ReadMe's own
-compiler.
+`<YOUR_API_KEY>` in body text is read as a JSX tag, a bare `{` opens a
+JavaScript expression, and an `<!-- HTML comment -->` is a syntax error —
+any of which takes the whole page down. All three are neutralised, in body
+text, headings, table cells and list items, for every input format. Code
+blocks and code spans are left exactly as written, because MDX does not look
+inside them.
 
 **Structure is cleaned up.** Cover page, revision history and table of contents
 dropped. Heading levels remapped for ReadMe's title and contents panel.
@@ -87,7 +90,12 @@ reference/
 - `index`, `overview`, `intro` or `readme` inside a subfolder becomes that
   page's content. Without one you get a placeholder parent page.
 - Numeric prefixes (`01-`, `02-`) set the order and are stripped from titles.
-- Mixed `.docx`, `.pdf`, `.html` and `.md` in one zip is fine.
+  The filenames themselves stay clean, because in a synced repo the filename
+  *is* the page slug — `_order.yaml` is what carries the order.
+- Files loose at the top level of the zip go into a `Documentation` category;
+  name it something else with **Category folder**.
+- Mixed `.docx`, `.pdf`, `.html` and `.md` in one zip is fine, and images
+  extracted from any of them are written next to the page that uses them.
 
 Commit the `docs/` folder to a repo connected to ReadMe and it publishes.
 
@@ -98,9 +106,14 @@ Commit the `docs/` folder to a repo connected to ReadMe and it publishes.
 Switch to the **Markdown** tab — drop files or paste directly.
 
 Worth doing even when it looks fine: Markdown written for GitHub routinely
-breaks as MDX. This escapes stray `<PLACEHOLDER>` tags (leaving real components
-and code alone), closes `<br>` into `<br />`, normalises callouts, and fixes
-heading levels.
+breaks as MDX. This escapes stray `<PLACEHOLDER>` tags and bare braces (leaving
+real components, JSX attributes like `columns={2}`, autolinks and code alone),
+closes `<br>` into `<br />`, removes HTML comments MDX cannot parse, normalises
+callouts, and fixes heading levels.
+
+A page that already has ReadMe frontmatter keeps it — `excerpt`, `icon`,
+`deprecated` and the whole nested `metadata:` block ride through untouched, and
+its declared `slug` names the output file so published URLs don't move.
 
 ---
 
@@ -137,4 +150,31 @@ splitting, heading depth, boilerplate headings and callout style.
 
 PDF reading uses [pdf.js](https://mozilla.github.io/pdf.js/) (Apache-2.0),
 bundled in `vendor/` rather than loaded from a CDN so the page keeps working
-offline and never contacts a third party.
+offline and never contacts a third party. It is pdf.js's *legacy* build, which
+is what keeps the Chrome 103 floor honest — see `vendor/README.md`.
+
+---
+
+## Working on it
+
+The page ships as plain files with no build step for the browser; `build.py`
+only stamps cache-busting hashes and produces the single-file copy.
+
+```
+npm install     # once — jsdom, for the tests
+npm test        # the suite
+npm run build   # test, stamp index.html, rebuild doc2readme.html, re-verify
+```
+
+The tests run the shipped files unmodified inside jsdom, so they exercise what
+is actually served. They cover each reader (Word, PDF, HTML, Markdown), the zip
+→ git-sync layout, the page itself, and one suite that pushes the same hostile
+text through all four inputs and asserts none of it can break an MDX build — so
+a fix in one reader can't quietly be missing from the other three. The PDF
+suite runs twice: once on synthetic glyph positions to pin the layout
+heuristics, and once on a real generated PDF through real pdf.js.
+
+Always run `npm run build` before pushing. GitHub Pages serves assets with a
+ten-minute cache and no fingerprinting, so an unstamped change can leave a
+visitor with a new `index.html` and a stale `app.js` — which looks exactly like
+broken code and isn't.

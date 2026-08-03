@@ -102,7 +102,11 @@ async function addFiles(list) {
     incoming.push({ name: f.name, buffer: await f.arrayBuffer() });
   }
   for (const item of incoming) {
-    if (picked.some((p) => p.name === item.name)) continue;
+    // Same name *and* same size is the same file dropped twice. Same name
+    // alone is two different documents from two folders, and silently
+    // discarding one of those is worse than a duplicate.
+    if (picked.some((p) => p.name === item.name &&
+                           p.buffer.byteLength === item.buffer.byteLength)) continue;
     picked.push(item);
   }
   renderFiles();
@@ -210,10 +214,19 @@ $('convertBtn').addEventListener('click', async () => {
   renderResults();
 });
 
+// _order.yaml files ship in the zip but are not pages to preview. Every place
+// that indexes by the active tab has to agree on this list, or Copy and
+// Download hand back a different file from the one on screen.
+function previewablePages() {
+  return converted.filter((f) => f.text !== undefined && /\.mdx?$/i.test(f.path));
+}
+function activePage() {
+  return previewablePages()[active];
+}
+
 function renderResults() {
   const box = $('results');
-  // _order.yaml files ship in the zip but are not pages to preview.
-  const previewable = converted.filter((f) => f.text !== undefined && /\.mdx?$/i.test(f.path));
+  const previewable = previewablePages();
   const any = previewable.length > 0;
   box.hidden = !any;
   $('reportPanel').hidden = !reports.length;
@@ -346,14 +359,14 @@ function download(blob, name) {
 }
 
 $('dlOneBtn').addEventListener('click', () => {
-  const f = converted.filter((x) => x.text !== undefined)[active];
+  const f = activePage();
   if (!f) return;
   // The download is the git-sync artifact, so it keeps its frontmatter.
   download(new Blob([f.text], { type: 'text/markdown' }), f.path.split('/').pop());
 });
 
 $('copyBtn').addEventListener('click', async () => {
-  const f = converted.filter((x) => x.text !== undefined)[active];
+  const f = activePage();
   if (!f) return;
   try {
     await navigator.clipboard.writeText(stripPageFrontmatter(f.text));
@@ -394,7 +407,7 @@ if (typeof DecompressionStream === 'undefined') {
 /* ---- preview ---- */
 let previewOpener = null;
 function openPreview() {
-  const f = converted.filter((x) => x.text !== undefined)[active];
+  const f = activePage();
   if (!f) return;
   $('previewTitle').textContent = 'Preview — ' + f.path;
   $('previewBody').innerHTML = readmePreview.render(stripPageFrontmatter(f.text));
@@ -425,6 +438,17 @@ function stripPageFrontmatter(t) {
 function hasFrontmatter(t) {
   return /^---\r?\n[\s\S]*?\r?\n---/.test(String(t || ''));
 }
+/* Test hook. The suite drives this page the way a person does — add files,
+   click Convert — but a couple of cases (the mixed file list an archive
+   produces, every report shape at once) are far cheaper to set up directly
+   than to synthesise six documents for. Nothing here runs in normal use. */
+window.__setResults = (files, reportList, activeIndex) => {
+  converted = files || [];
+  reports = reportList || [];
+  active = activeIndex || 0;
+  renderResults();
+};
+
 $('previewBtn').addEventListener('click', openPreview);
 $('previewClose').addEventListener('click', closePreview);
 $('previewModal').addEventListener('click', (e) => { if (e.target.id === 'previewModal') closePreview(); });

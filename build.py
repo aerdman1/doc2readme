@@ -53,8 +53,38 @@ def check_globals():
     print("  %d top-level globals, no collisions" % len(seen))
 
 
+def run_tests(files, label):
+    """The suite is the reason the conversion rules can be changed at all.
+    Skipped, with a visible note, when node or node_modules are absent — the
+    build still has to work on a machine that has only Python."""
+    if not os.path.isdir(os.path.join(HERE, "node_modules")):
+        print("  %s skipped — run `npm install` once to enable them" % label)
+        return
+    try:
+        proc = subprocess.run(["node", "--test"] + files, cwd=HERE,
+                              capture_output=True, text=True)
+    except FileNotFoundError:
+        print("  %s skipped — node is not installed" % label)
+        return
+    if proc.returncode != 0:
+        print(proc.stdout[-4000:])
+        sys.exit("%s failed — stopping" % label)
+    counts = [l[2:] for l in proc.stdout.splitlines()
+              if l.startswith("# ") and l[2:].startswith(("tests", "pass", "fail"))]
+    print("  %s: %s" % (label, ", ".join(counts)))
+
+
+def behaviour_tests():
+    """Everything except the artifact-freshness checks, which can only pass
+    after this build has written the artifacts."""
+    tests = os.path.join(HERE, "tests")
+    return sorted(os.path.join("tests", f) for f in os.listdir(tests)
+                  if f.endswith((".test.js", ".test.mjs")) and f != "build.test.js")
+
+
 def main():
     check_globals()
+    run_tests(behaviour_tests(), "tests")
     path = os.path.join(HERE, "index.html")
     with open(path, encoding="utf-8") as fh:
         page = fh.read()
@@ -76,6 +106,9 @@ def main():
 
     print()
     subprocess.run([sys.executable, os.path.join(HERE, "build-single-file.py")], check=True)
+    # Only now can these pass: they check that what was just written matches
+    # the sources it was written from.
+    run_tests(["tests/build.test.js"], "artifact checks")
 
 
 if __name__ == "__main__":
