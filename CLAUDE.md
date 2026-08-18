@@ -30,6 +30,7 @@ Do not add a dependency that loads at runtime. Do not relax `connect-src`.
 index.html          the hosted page; loads the scripts below in this order
   preview.js        Markdown → HTML for the Preview modal (approximate, by design)
   md-clean.js       Markdown  → Block[]
+  mdx-table.js      broken ReadMe <Table> → the MDX their editor writes
   html-extract.js   HTML      → Block[]
   gitsync.js        pages     → the docs/ tree ReadMe git-sync expects
   pdf-extract.js    PDF       → Block[]  (pdf.js does the glyphs; this rebuilds structure)
@@ -82,6 +83,7 @@ and says so).
 | --- | --- |
 | `docx.test.js` `markdown.test.js` `html.test.js` `pdf.test.js` | one reader each |
 | `mdx.test.js` | **the important one** — same hostile text through all four inputs |
+| `mdx-table.test.js` | the table cleaner: every breakage shape, and ReadMe's two rules |
 | `archive.test.js` | zip → git-sync layout |
 | `ui.test.js` | `index.html` + `app.js`: element ids, copy drift, tab/button alignment |
 | `pdf-e2e.test.mjs` | a generated PDF through real pdf.js |
@@ -105,6 +107,20 @@ All three are neutralised in body text, headings, table cells and list items,
 for all four inputs. Code blocks and code spans are left exactly as written,
 because MDX does not look inside them. `mdx.test.js` is what keeps this true;
 if you touch escaping, that suite is the one that matters.
+
+**A rebuilt `<Table>` bypasses the escaping pass, so it escapes its own cells.**
+`md-clean.js` escapes one block at a time, which is why an MDX table used to
+come out as literal `\<Table\>`: the opening tag looked unterminated. The table
+is now its own block kind (`mdxtable`) that `renderBlocks` emits verbatim —
+which means nothing downstream escapes it, so `mdx-table.js` calls
+`escapeStrayTags` on each cell itself. Code is masked before that: a cell may
+legally contain `` `<YOUR_TOKEN>` ``, and MDX does not look inside a fence.
+
+Two rules in there are ReadMe's, not ours, and are worth not "simplifying":
+a table is emitted as a pipe table only when every cell is phrasing-only (their
+serializer's rule, so a human save produces no diff), and a leading `-` in a
+cell is a list marker even though CommonMark says it is literal text in GFM
+(their editor's `reparseTableCellBlockContent` does the same).
 
 **Escaping lives in `converter.js`.** `esc()` is the single implementation;
 `html-extract.js` calls it through `window.docx2readme.escapeInline` so all

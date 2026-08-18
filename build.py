@@ -19,7 +19,7 @@ import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ASSETS = ["styles.css", "preview.js", "md-clean.js", "html-extract.js", "gitsync.js",
+ASSETS = ["styles.css", "preview.js", "md-clean.js", "mdx-table.js", "html-extract.js", "gitsync.js",
           "pdf-extract.js",
           "converter.js", "app.js"]
 
@@ -29,7 +29,7 @@ def digest(name):
         return hashlib.sha256(fh.read()).hexdigest()[:8]
 
 
-SCRIPTS = ["preview.js", "md-clean.js", "html-extract.js", "gitsync.js", "pdf-extract.js",
+SCRIPTS = ["preview.js", "md-clean.js", "mdx-table.js", "html-extract.js", "gitsync.js", "pdf-extract.js",
            "converter.js", "app.js"]
 DECL = re.compile(r"^(?:const|let|var|function|async function|class)\s+([A-Za-z_$][\w$]*)",
                   re.M)

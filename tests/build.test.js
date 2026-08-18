@@ -13,7 +13,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const ASSETS = ['styles.css', 'preview.js', 'md-clean.js', 'html-extract.js',
+const ASSETS = ['styles.css', 'preview.js', 'md-clean.js', 'mdx-table.js', 'html-extract.js',
                 'gitsync.js', 'pdf-extract.js', 'converter.js', 'app.js'];
 
 const read = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');

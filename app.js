@@ -279,6 +279,7 @@ function renderResults() {
     if (r.pdfPages) bits.unshift(r.pdfPages + ' PDF page(s) read');
     if (r.mdCodeBlocks) bits.push(r.mdCodeBlocks + ' code block(s) preserved');
     if (r.mdTables) bits.push(r.mdTables + ' table(s) parsed');
+    if (r.mdxTables) bits.push(r.mdxTables + ' <Table> rebuilt');
     if (r.htmlTables) bits.push(r.htmlTables + ' table(s) parsed');
     if (r.htmlCodeBlocks) bits.push(r.htmlCodeBlocks + ' code block(s) kept');
     if (r.pdfTables) bits.push(r.pdfTables + ' table(s) reconstructed');
@@ -320,6 +321,23 @@ function renderResults() {
         + 'fails to build.</span>');
     }
     if (r.mdSelfClosed) add('Closed ' + r.mdSelfClosed + ' void HTML tag(s) (&lt;br&gt; → &lt;br /&gt;) for MDX');
+    if (r.mdxTables) {
+      add('Rebuilt ' + r.mdxTables + ' &lt;Table&gt; the way ReadMe\'s editor writes one: '
+        + 'Markdown lists inside &lt;td&gt; instead of inlined &lt;ul&gt;/&lt;li&gt;'
+        + (r.mdxTablesToPipe ? ', ' + r.mdxTablesToPipe + ' of them as a pipe table '
+           + '(every cell was inline, which is the form the editor itself would save)' : ''));
+    }
+    if (r.mdxTablesRepaired) {
+      add('<span class="warn">Repaired ' + r.mdxTablesRepaired + ' broken tag(s) in table cells '
+        + '(an unclosed &lt;/li, a &lt;ul&gt; typed where &lt;/ul&gt; was meant, a tag cut off '
+        + 'mid-name). Where the source had lost text outright it is still lost — read those '
+        + 'cells against the original.</span>');
+    }
+    if (r.mdOrphanClosers) {
+      add('<span class="warn">Dropped ' + r.mdOrphanClosers + ' stray closing tag(s) '
+        + '(&lt;/li&gt;, &lt;/ul&gt;) left over outside a table — MDX rejects a closing tag '
+        + 'with nothing open, so the page would not have built.</span>');
+    }
     if (r.mdFrontmatter) add('Existing frontmatter read: ' + escHtml(r.mdFrontmatter.join(', ')));
     if (r.kind === 'pdf') {
       add('<span class="warn">PDF source — headings, tables and code '

@@ -1003,6 +1003,10 @@ function renderBlocks(blocks, imageUrls, calloutStyle) {
       out.push(fence + lang + '\n' + block.text + '\n' + fence);
     } else if (block.kind === 'table') {
       out.push(renderTable(block.rows));
+    } else if (block.kind === 'mdxtable') {
+      // Already ReadMe MDX, laid out the way their editor lays it out. Reflowing
+      // or escaping it here would undo exactly what mdx-table.js just fixed.
+      out.push(block.text);
     }
   }
   let body = out.join('\n\n');

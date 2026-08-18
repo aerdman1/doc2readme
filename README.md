@@ -111,6 +111,40 @@ real components, JSX attributes like `columns={2}`, autolinks and code alone),
 closes `<br>` into `<br />`, removes HTML comments MDX cannot parse, normalises
 callouts, and fixes heading levels.
 
+### Broken `<Table>` cells
+
+Paste a page whose tables look like this and they come back rebuilt:
+
+```
+<td>
+  **Fields:**<br /><br /><ul><li>one</li><br /><li>two</li><br /><ul>
+</td>
+```
+
+becomes
+
+```
+<td>
+  **Fields:**
+
+  - one
+  - two
+</td>
+```
+
+That shape is what ReadMe's own legacy-to-MDX migration left behind: it renders
+a cell to HTML and strips the newlines, so every list in a table cell became
+one long line of `<ul>/<li>`. Hand-editing those is how they end up with an
+unclosed `</li`, a `<ul>` typed where `</ul>` was meant, or a tag cut off
+mid-name. All three are repaired, `<br />` used as list spacing is dropped, and
+nested lists keep their nesting.
+
+Two behaviours are copied from ReadMe's editor on purpose, so that opening the
+page and saving it produces no diff: cells hold Markdown rather than HTML, and a
+table whose every cell is a single line of text comes back as an ordinary pipe
+table. Content the source had already lost cannot be recovered — the report
+says how many tags it had to repair, so you know which cells to read.
+
 A page that already has ReadMe frontmatter keeps it — `excerpt`, `icon`,
 `deprecated` and the whole nested `metadata:` block ride through untouched, and
 its declared `slug` names the output file so published URLs don't move.

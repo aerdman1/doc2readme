@@ -182,6 +182,33 @@ function markdownToBlocks(text, report) {
       continue;
     }
 
+    // <Table> ... </Table> — a ReadMe MDX table, rebuilt rather than escaped.
+    // escapeStrayTags only ever sees one block at a time, so the opening
+    // <Table> looks unterminated to it and comes out as literal \<Table\>,
+    // taking every <ul> in the cells with it. mdx-table.js owns this shape.
+    if (/^\s*<Table\b/i.test(line) && window.mdxTable) {
+      const buf = [];
+      let depth = 0;
+      while (i < lines.length) {
+        const l = lines[i++];
+        buf.push(l);
+        depth += (l.match(/<Table\b/gi) || []).length;
+        depth -= (l.match(/<\/\s*Table\b/gi) || []).length;
+        if (depth <= 0) break;
+      }
+      const cleaned = window.mdxTable.cleanMdxTables(buf.join('\n'), report);
+      blocks.push({ kind: 'mdxtable', text: cleaned.text.trim(), images: [] });
+      continue;
+    }
+
+    // A line that is nothing but list closers is debris from a table like the
+    // one above; MDX rejects an unmatched closing tag outright.
+    if (/^\s*(?:<\/\s*(?:li|ul|ol)\s*>?\s*)+$/i.test(line)) {
+      stats.orphanClosers = (stats.orphanClosers || 0) + 1;
+      i++;
+      continue;
+    }
+
     // <Callout ...> ... </Callout>  -> internal callout block
     const co = /^\s*<Callout\b([^>]*)>\s*$/i.exec(line);
     if (co) {
@@ -297,7 +324,7 @@ function markdownToBlocks(text, report) {
     // standalone image line stays a paragraph; the renderer passes it through
     const buf = [];
     while (i < lines.length && lines[i].trim() &&
-           !/^(\s*#{1,6}\s|\s*(`{3,}|~{3,})|\s*\||\s*>|\s*<Callout\b)/i.test(lines[i]) &&
+           !/^(\s*#{1,6}\s|\s*(`{3,}|~{3,})|\s*\||\s*>|\s*<Callout\b|\s*<Table\b)/i.test(lines[i]) &&
            !/^(\s*)([-*+]|\d{1,3}[.)])\s+/.test(lines[i])) {
       buf.push(lines[i++]);
     }
@@ -309,6 +336,7 @@ function markdownToBlocks(text, report) {
   if (stats.selfClosed) report.mdSelfClosed = stats.selfClosed;
   if (stats.escapedBraces) report.mdEscapedBraces = stats.escapedBraces;
   if (stats.comments) report.mdComments = stats.comments;
+  if (stats.orphanClosers) report.mdOrphanClosers = stats.orphanClosers;
   report.mdTitle = meta.title || '';
   // The caller carries slug/excerpt/order through to the new frontmatter;
   // regenerating a slug would break inbound links to an already-live page.
