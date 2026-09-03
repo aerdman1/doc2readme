@@ -114,6 +114,44 @@ test('a table becomes a real w:tbl with a header row', () => {
   assert.match(doc, /<w:tblHeader\/>/);
 });
 
+/* The bug this guards against shipped: 150 tables across a customer's export
+ * with no w:tblGrid at all. LibreOffice papered over it, so it looked fine
+ * here — Word collapsed every column to one character wide, and pandoc dropped
+ * the tables and their contents outright. w:tblGrid is required, and its widths
+ * have to add up, or the reader is entitled to re-guess the whole layout. */
+test('every table carries a w:tblGrid that matches its columns and adds up', () => {
+  const { doc } = build([{ title: 'P', depth: 1, blocks: blocks(
+    '| Campo | Descripción | Requerido |\n| --- | --- | --- |\n' +
+    '| id | El identificador único que el banco asigna a la empresa | Sí |\n' +
+    '\n<Callout icon="📘">\nMind this.\n</Callout>\n') }]);
+
+  const tables = doc.match(/<w:tbl>[\s\S]*?<\/w:tbl>/g) || [];
+  assert.equal(tables.length, 2, 'expected the data table and the callout');
+
+  for (const t of tables) {
+    const grid = /<w:tblGrid>([\s\S]*?)<\/w:tblGrid>/.exec(t);
+    assert.ok(grid, 'table has no w:tblGrid');
+
+    const cols = (grid[1].match(/<w:gridCol w:w="(\d+)"\/>/g) || [])
+      .map((g) => Number(/\d+/.exec(g)[0]));
+    const cells = (/<w:tr>[\s\S]*?<\/w:tr>/.exec(t)[0].match(/<w:tc>/g) || []).length;
+    assert.equal(cols.length, cells, 'gridCol count does not match the cells in a row');
+    assert.equal(cols.reduce((a, b) => a + b, 0), 10080,
+      'grid must sum to the text column width');
+    assert.match(t, /<w:tblLayout w:type="fixed"\/>/);
+  }
+});
+
+test('column widths follow content, so a key column is not as wide as a sentence', () => {
+  const { doc } = build([{ title: 'P', depth: 1, blocks: blocks(
+    '| Campo | Descripción |\n| --- | --- |\n' +
+    '| id | Una descripción bastante larga que necesita mucho más espacio horizontal |\n') }]);
+  const cols = (/<w:tblGrid>([\s\S]*?)<\/w:tblGrid>/.exec(doc)[1]
+    .match(/w:w="(\d+)"/g) || []).map((g) => Number(/\d+/.exec(g)[0]));
+  assert.ok(cols[1] > cols[0] * 1.5,
+    'the description column should be clearly wider, got ' + cols.join('/'));
+});
+
 test('<Callout> survives as a shaded block, not literal tag text', () => {
   const { doc } = build([{ title: 'P', depth: 1,
     blocks: blocks('<Callout icon="📘">\nMind this.\n</Callout>\n') }]);

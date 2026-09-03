@@ -19,7 +19,11 @@
   'use strict';
 
   const EMU_PER_PX = 9525;              // 96 dpi
-  const MAX_W_EMU = 6.0 * 914400;       // 6in: letter minus 1.25in margins
+  // Letter (12240 twips) minus the 1080 margins sectPr actually sets. These two
+  // are the same measurement in different units and must stay in step: an image
+  // or a table grid wider than the text column is what makes Word reflow a page.
+  const CONTENT_W = 10080;              // twips
+  const MAX_W_EMU = (CONTENT_W / 1440) * 914400;
 
   function xml(s) {
     return String(s == null ? '' : s)
@@ -167,30 +171,74 @@
     // One paragraph per line, kept together, so a fence does not fragment across
     // pages any worse than it has to.
     return String(text).split('\n').map((line) =>
-      para(textRun(line || ' ', { mono: true }), 'Code')).join('');
+      para(textRun(line || ' ', { mono: true }), 'Code')).join('') + para('', 'Spacer');
+  }
+
+  // Borders and padding are identical for every table this writes, and the order
+  // of children inside w:tblPr is fixed by the schema (tblStyle, tblW, tblBorders,
+  // tblLayout, tblCellMar) — Word is not forgiving about it.
+  function tblBorders(colour) {
+    return '<w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map((s) =>
+        '<w:' + s + ' w:val="single" w:sz="4" w:space="0" w:color="' + colour + '"/>').join('') +
+      '</w:tblBorders>';
+  }
+
+  const CELL_MAR = '<w:tblCellMar>' +
+    '<w:top w:w="60" w:type="dxa"/><w:left w:w="108" w:type="dxa"/>' +
+    '<w:bottom w:w="60" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar>';
+
+  function tblGrid(cols) {
+    return '<w:tblGrid>' + cols.map((w) => '<w:gridCol w:w="' + w + '"/>').join('') + '</w:tblGrid>';
+  }
+
+  // Column widths. An even split is wrong for the tables ReadMe pages actually
+  // contain — "Campo | Descripción" is a short key against a sentence — so weight
+  // each column by the longest line it has to hold. sqrt damps it: a 300-char
+  // description earns more room than a 6-char code, but not fifty times more,
+  // because the whole table still has to fit between the margins.
+  function colWidths(rows, count) {
+    const weight = [];
+    for (let c = 0; c < count; c++) {
+      let longest = 1;
+      for (const r of rows) {
+        const cell = r[c] == null ? '' : String(r[c]);
+        for (const line of cell.split('\n')) longest = Math.max(longest, line.length);
+      }
+      weight.push(Math.sqrt(Math.min(longest, 160)));
+    }
+    const total = weight.reduce((a, b) => a + b, 0) || count;
+    const min = Math.min(700, Math.floor(CONTENT_W / count));
+    const w = weight.map((x) => Math.max(min, Math.round(CONTENT_W * x / total)));
+    // The grid has to sum to the table width exactly. If it does not, Word throws
+    // the whole thing away and re-guesses — which is how you get one-character
+    // columns. Push the rounding drift onto the widest column, never a narrow one.
+    let widest = 0;
+    for (let i = 1; i < w.length; i++) if (w[i] > w[widest]) widest = i;
+    w[widest] += CONTENT_W - w.reduce((a, b) => a + b, 0);
+    return w;
   }
 
   function tableXml(rows, ctx) {
     if (!rows || !rows.length) return '';
     const width = Math.max.apply(null, rows.map((r) => r.length));
-    const cellW = Math.floor(9360 / width);
+    const cols = colWidths(rows, width);
     const body = rows.map((r, ri) => {
       const cells = [];
       for (let c = 0; c < width; c++) {
         const raw = r[c] == null ? '' : String(r[c]);
         const shade = ri === 0 ? '<w:shd w:val="clear" w:fill="F1F3F5"/>' : '';
-        cells.push('<w:tc><w:tcPr><w:tcW w:w="' + cellW + '" w:type="dxa"/>' + shade + '</w:tcPr>' +
+        cells.push('<w:tc><w:tcPr><w:tcW w:w="' + cols[c] + '" w:type="dxa"/>' + shade + '</w:tcPr>' +
           para(inlineRuns(raw, ctx, ri === 0 ? { b: true } : {}).join('') ||
                textRun('', {}), 'TableText') + '</w:tc>');
       }
       return '<w:tr>' + (ri === 0 ? '<w:trPr><w:tblHeader/></w:trPr>' : '') + cells.join('') + '</w:tr>';
     }).join('');
     return '<w:tbl><w:tblPr><w:tblStyle w:val="TableGrid"/>' +
-      '<w:tblW w:w="0" w:type="auto"/>' +
-      '<w:tblBorders>' +
-      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map((s) =>
-        '<w:' + s + ' w:val="single" w:sz="4" w:space="0" w:color="D0D7DE"/>').join('') +
-      '</w:tblBorders></w:tblPr>' + body + '</w:tbl>' + para('', 'Spacer');
+      '<w:tblW w:w="' + CONTENT_W + '" w:type="dxa"/>' +
+      tblBorders('D0D7DE') +
+      '<w:tblLayout w:type="fixed"/>' + CELL_MAR +
+      '</w:tblPr>' + tblGrid(cols) + body + '</w:tbl>' + para('', 'Spacer');
   }
 
   function calloutXml(block, ctx) {
@@ -201,13 +249,14 @@
     const bodyRuns = String(block.text || '').split('\n')
       .map((l) => para(inlineRuns(l, ctx, {}).join('') || textRun('', {}), 'CalloutText'))
       .join('');
-    return '<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/>' +
+    return '<w:tbl><w:tblPr><w:tblW w:w="' + CONTENT_W + '" w:type="dxa"/>' +
       '<w:tblBorders>' +
       '<w:left w:val="single" w:sz="18" w:space="0" w:color="0B5FFF"/>' +
       ['top', 'bottom', 'right', 'insideH', 'insideV'].map((s) =>
         '<w:' + s + ' w:val="single" w:sz="4" w:space="0" w:color="DCE3EA"/>').join('') +
-      '</w:tblBorders></w:tblPr><w:tr><w:tc>' +
-      '<w:tcPr><w:tcW w:w="9360" w:type="dxa"/><w:shd w:val="clear" w:fill="F5F8FC"/></w:tcPr>' +
+      '</w:tblBorders><w:tblLayout w:type="fixed"/>' + CELL_MAR + '</w:tblPr>' +
+      tblGrid([CONTENT_W]) + '<w:tr><w:tc>' +
+      '<w:tcPr><w:tcW w:w="' + CONTENT_W + '" w:type="dxa"/><w:shd w:val="clear" w:fill="F5F8FC"/></w:tcPr>' +
       para(head, 'CalloutText') + bodyRuns +
       '</w:tc></w:tr></w:tbl>' + para('', 'Spacer');
   }
