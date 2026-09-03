@@ -209,6 +209,20 @@ function markdownToBlocks(text, report) {
       continue;
     }
 
+    // <Image src="..." /> -> a Markdown image, so both renderers see it the
+    // same way. A ReadMe export is full of these (113 in one real project) and
+    // without this they fall through to escapeStrayTags and the picture is gone
+    // — silently, because the escaped tag still looks like prose.
+    const im = /^\s*<Image\b([^>]*?)\/?>\s*$/i.exec(line);
+    if (im) {
+      const src = (/\bsrc\s*=\s*"([^"]*)"/i.exec(im[1]) || [])[1]
+               || (/\bsrc\s*=\s*'([^']*)'/i.exec(im[1]) || [])[1] || '';
+      const alt = (/\balt\s*=\s*"([^"]*)"/i.exec(im[1]) || [])[1] || '';
+      if (src) blocks.push({ kind: 'para', text: '![' + alt + '](' + src + ')', images: [] });
+      i++;
+      continue;
+    }
+
     // <Callout ...> ... </Callout>  -> internal callout block
     const co = /^\s*<Callout\b([^>]*)>\s*$/i.exec(line);
     if (co) {

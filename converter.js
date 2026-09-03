@@ -1436,5 +1436,5 @@ window.docx2readme = { convertDocument, convertDocx: convertDocument, defaultOpt
                        looksLikeMarkdown, looksLikeHtml, convertArchive,
                        applyPasses, renderBlocks,
                        escapeInline: esc,
-                       makeZip, slugify, normKey, looksLikePdf,
+                       makeZip, readZip, slugify, normKey, looksLikePdf,
                        DEFAULT_LABEL_HEADINGS, DEFAULT_DROP_SECTIONS };

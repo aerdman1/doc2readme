@@ -7,8 +7,9 @@ email, drop on a share, or hand to someone who wants to keep a copy — it opens
 by double-clicking, works with no internet, and has nothing to install.
 
 Inlining forces script-src/style-src 'unsafe-inline', but the guarantee that
-actually matters — connect-src 'none', so the page cannot transmit anything —
-is unchanged and still enforced by the browser.
+actually matters is unchanged and still enforced by the browser: connect-src
+allows exactly one origin, https://files.readme.io, and it is only ever read
+from. Your documents still go nowhere.
 """
 import json
 import os
@@ -40,6 +41,9 @@ def main():
     gitsync = read("gitsync.js")
     htmlx = read("html-extract.js")
     tablewizard = read("table-wizard.js")
+    readmeexport = read("readme-export.js")
+    docxrender = read("docx-render.js")
+    readme2word = read("readme2word.js")
 
     for name, body in (("converter.js", converter), ("app.js", app),
                        ("pdf-extract.js", pdfextract),
@@ -48,7 +52,10 @@ def main():
                        ("mdx-table.js", mdxtable),
                        ("gitsync.js", gitsync),
                        ("html-extract.js", htmlx),
-                       ("table-wizard.js", tablewizard)):
+                       ("table-wizard.js", tablewizard),
+                       ("readme-export.js", readmeexport),
+                       ("docx-render.js", docxrender),
+                       ("readme2word.js", readme2word)):
         # A literal </script> inside a JS string would close the tag early.
         if "</script" in body.lower():
             sys.exit("%s contains a literal </script> — escape it first" % name)
@@ -79,7 +86,10 @@ def main():
         r'<script src="gitsync\.js(?:\?v=[0-9a-f]+)?"></script>\s*'
         r'<script src="pdf-extract\.js(?:\?v=[0-9a-f]+)?"></script>\s*'
         r'<script src="converter\.js(?:\?v=[0-9a-f]+)?"></script>\s*'
+        r'<script src="readme-export\.js(?:\?v=[0-9a-f]+)?"></script>\s*'
+        r'<script src="docx-render\.js(?:\?v=[0-9a-f]+)?"></script>\s*'
         r'<script src="app\.js(?:\?v=[0-9a-f]+)?"></script>\s*'
+        r'<script src="readme2word\.js(?:\?v=[0-9a-f]+)?"></script>\s*'
         r'<script src="table-wizard\.js(?:\?v=[0-9a-f]+)?"></script>')
     if not script_block.search(page):
         sys.exit("could not find the script block to inline")
@@ -92,18 +102,22 @@ def main():
                    "<script>\n" + gitsync + "\n</script>\n"
                    "<script>\n" + pdfextract + "\n</script>\n"
                    "<script>\n" + converter + "\n</script>\n"
+                   "<script>\n" + readmeexport + "\n</script>\n"
+                   "<script>\n" + docxrender + "\n</script>\n"
                    "<script>\n" + app + "\n</script>\n"
+                   "<script>\n" + readme2word + "\n</script>\n"
                    "<script>\n" + tablewizard + "\n</script>"),
         page, count=1)
 
-    # Inlining means the strict script-src/style-src can't apply. connect-src
-    # stays 'none' — that is the clause that proves nothing is uploaded.
+    # Inlining means the strict script-src/style-src can't apply. connect-src is
+    # pinned to ReadMe's public image CDN and nothing else, so the page can pull
+    # the pictures an export references and still cannot send anything anywhere.
     page = re.sub(
         r'<meta http-equiv="Content-Security-Policy"[^>]*>',
         '<meta http-equiv="Content-Security-Policy" content="'
         "default-src 'none'; script-src 'unsafe-inline' blob:; "
-        "style-src 'unsafe-inline'; img-src 'self' data: blob:; "
-        "connect-src 'none'; worker-src blob:; "
+        "style-src 'unsafe-inline'; img-src 'self' data: blob: https://files.readme.io; "
+        "connect-src https://files.readme.io; worker-src blob:; "
         "base-uri 'none'; form-action 'none'"
         '">',
         page, count=1)
@@ -112,9 +126,10 @@ def main():
         "<!--\n"
         "  doc2readme — single-file build. Nothing to install.\n"
         "  Open this file in a browser and drop Word or PDF documents on it.\n"
-        "  Works offline. Your document never leaves the tab: the\n"
-        "  Content-Security-Policy below sets connect-src 'none', so the\n"
-        "  browser itself blocks this page from making any network request.\n"
+        "  Your document never leaves the tab: the Content-Security-Policy below\n"
+        "  allows exactly one origin, https://files.readme.io, so the browser itself\n"
+        "  blocks this page from reaching anywhere else. That one origin is ReadMe's\n"
+        "  public image CDN, read from only when converting an export to Word.\n"
         "-->\n")
     page = page.replace("<!doctype html>\n", "<!doctype html>\n" + banner, 1)
 

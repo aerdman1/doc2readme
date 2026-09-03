@@ -21,7 +21,8 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSETS = ["styles.css", "preview.js", "md-clean.js", "mdx-table.js", "html-extract.js", "gitsync.js",
           "pdf-extract.js",
-          "converter.js", "app.js", "table-wizard.js"]
+          "converter.js", "readme-export.js", "docx-render.js",
+          "app.js", "readme2word.js", "table-wizard.js"]
 
 
 def digest(name):
@@ -30,7 +31,8 @@ def digest(name):
 
 
 SCRIPTS = ["preview.js", "md-clean.js", "mdx-table.js", "html-extract.js", "gitsync.js", "pdf-extract.js",
-           "converter.js", "app.js", "table-wizard.js"]
+           "converter.js", "readme-export.js", "docx-render.js",
+           "app.js", "readme2word.js", "table-wizard.js"]
 DECL = re.compile(r"^(?:const|let|var|function|async function|class)\s+([A-Za-z_$][\w$]*)",
                   re.M)
 

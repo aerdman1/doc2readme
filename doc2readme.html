@@ -2,14 +2,15 @@
 <!--
   doc2readme — single-file build. Nothing to install.
   Open this file in a browser and drop Word or PDF documents on it.
-  Works offline. Your document never leaves the tab: the
-  Content-Security-Policy below sets connect-src 'none', so the
-  browser itself blocks this page from making any network request.
+  Your document never leaves the tab: the Content-Security-Policy below
+  allows exactly one origin, https://files.readme.io, so the browser itself
+  blocks this page from reaching anywhere else. That one origin is ReadMe's
+  public image CDN, read from only when converting an export to Word.
 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' blob:; style-src 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; worker-src blob:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' blob:; style-src 'unsafe-inline'; img-src 'self' data: blob: https://files.readme.io; connect-src https://files.readme.io; worker-src blob:; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>doc2readme — Word, PDF, HTML &amp; Markdown to ReadMe</title>
@@ -625,6 +626,7 @@ tr.twhead .tweditable { font-weight: 650; color: var(--text); }
   <div class="appnav" role="tablist">
     <button id="navDocs" class="on" role="tab" aria-selected="true">Documents</button>
     <button id="navTables" role="tab" aria-selected="false">Tables</button>
+    <button id="navR2w" role="tab" aria-selected="false">ReadMe &rarr; Word</button>
   </div>
   <span class="spacer"></span>
   <span class="pill"><span class="dot"></span>Runs entirely in your browser — nothing is uploaded</span>
@@ -802,9 +804,12 @@ tr.twhead .tweditable { font-weight: 650; color: var(--text); }
       </div>
     </div>
 
+    <p class="subtle crosslink">Already have docs in ReadMe and want them the other way round?
+      <a href="#" id="toR2w">Convert a ReadMe export to Word</a>.</p>
+
     <div class="banner" id="imgBanner" hidden>
       <span class="bi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 16-5-5-9 9"/></svg></span>
-      <div><strong>Images aren't uploaded for you.</strong> This page can't reach ReadMe, so extracted
+      <div><strong>Images aren't uploaded for you.</strong> This direction never contacts ReadMe, so extracted
         images are written into the <code>images/</code> folder of the .zip and referenced by relative
         path. Upload them to ReadMe (or any host) and replace those paths with the full URLs. Images
         that were already full URLs in your document are left untouched and will keep working.</div>
@@ -831,6 +836,54 @@ tr.twhead .tweditable { font-weight: 650; color: var(--text); }
       Safari 16.4+). Output is Markdown you can paste into ReadMe, or a <code>.zip</code> whose
       <code>docs/</code> folder drops into a ReadMe git-synced repository. Converted pages reproduce
       your document faithfully — give them a skim before publishing.</div></div>
+  </div>
+</div>
+
+
+<div class="shell" id="r2wRoot" hidden>
+  <div class="side">
+    <div class="panel">
+      <h2>Existing ReadMe docs</h2>
+      <div class="body">
+        <div class="drop" id="r2wDrop" role="button" tabindex="0" aria-label="Choose a ReadMe export to convert">
+          <strong>Drop your ReadMe export .zip here</strong>
+          <span class="sm">or click to browse</span>
+          <span class="subtle">In ReadMe: Project&nbsp;Settings &rarr; Export &rarr; download the .zip</span>
+          <input type="file" id="r2wPicker" accept=".zip" hidden>
+        </div>
+        <ul class="files" id="r2wFiles" hidden></ul>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="body">
+        <div class="checkline"><input type="checkbox" id="r2wImages" checked>
+          <label for="r2wImages">Download and embed images</label></div>
+        <div class="checkline"><input type="checkbox" id="r2wHidden">
+          <label for="r2wHidden">Include hidden pages</label></div>
+        <div class="btnstack">
+          <button class="primary" id="r2wGo" disabled>Convert to Word</button>
+          <button class="ghost" id="r2wZip" disabled>Download all as .zip</button>
+        </div>
+        <div class="hint" id="r2wStatus">One Word document per category, in sidebar order.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="panel">
+      <div class="body">
+        <h3>ReadMe &rarr; Word</h3>
+        <p>Drop the .zip ReadMe gives you and get one Word document per category, with pages in
+          the same order as your sidebar, headings nested to match, and tables, callouts, code and
+          images carried across.</p>
+        <p class="subtle">A ReadMe export contains no image files &mdash; every picture is a link to
+          files.readme.io. Leave &ldquo;Download and embed images&rdquo; ticked and this page fetches
+          them from there so they end up inside the document. Untick it and each one becomes a
+          labelled placeholder with its URL. Nothing of yours is uploaded either way.</p>
+        <ul class="files" id="r2wReport" hidden></ul>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1428,6 +1481,20 @@ function markdownToBlocks(text, report) {
     // one above; MDX rejects an unmatched closing tag outright.
     if (/^\s*(?:<\/\s*(?:li|ul|ol)\s*>?\s*)+$/i.test(line)) {
       stats.orphanClosers = (stats.orphanClosers || 0) + 1;
+      i++;
+      continue;
+    }
+
+    // <Image src="..." /> -> a Markdown image, so both renderers see it the
+    // same way. A ReadMe export is full of these (113 in one real project) and
+    // without this they fall through to escapeStrayTags and the picture is gone
+    // — silently, because the escaped tag still looks like prose.
+    const im = /^\s*<Image\b([^>]*?)\/?>\s*$/i.exec(line);
+    if (im) {
+      const src = (/\bsrc\s*=\s*"([^"]*)"/i.exec(im[1]) || [])[1]
+               || (/\bsrc\s*=\s*'([^']*)'/i.exec(im[1]) || [])[1] || '';
+      const alt = (/\balt\s*=\s*"([^"]*)"/i.exec(im[1]) || [])[1] || '';
+      if (src) blocks.push({ kind: 'para', text: '![' + alt + '](' + src + ')', images: [] });
       i++;
       continue;
     }
@@ -4797,8 +4864,542 @@ window.docx2readme = { convertDocument, convertDocx: convertDocument, defaultOpt
                        looksLikeMarkdown, looksLikeHtml, convertArchive,
                        applyPasses, renderBlocks,
                        escapeInline: esc,
-                       makeZip, slugify, normKey, looksLikePdf,
+                       makeZip, readZip, slugify, normKey, looksLikePdf,
                        DEFAULT_LABEL_HEADINGS, DEFAULT_DROP_SECTIONS };
+
+</script>
+<script>
+// A ReadMe zip export -> ordered pages, grouped by category.
+//
+// Shared by the page and tools/export2word.js so both walk an export the same
+// way. Pure: it takes the unpacked zip as a Map and returns plain objects.
+//
+// ORDER COMES FROM _order.yaml. ReadMe writes one at every level, and it is the
+// sidebar order — the only order a reader recognises. Sorting by filename puts
+// "advanced" before "getting-started" and makes the document nonsense.
+//
+// DEPTH IS THE NAV DEPTH, not the folder depth, and it drives Word heading
+// levels: a category is the document title, its direct pages are H1, their
+// children H2, and so on. A page's own headings are pushed underneath by
+// applyPasses({topLevel: depth + 1}).
+
+(function (root) {
+  'use strict';
+
+  const dec = () => new (root.TextDecoder || TextDecoder)('utf-8');
+  const text = (bytes) => (typeof bytes === 'string' ? bytes : dec().decode(bytes));
+
+  /** Front matter is YAML, but only a handful of scalar keys matter here. */
+  function frontmatter(src) {
+    const m = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(src);
+    if (!m) return { meta: {}, body: src };
+    const meta = {};
+    for (const line of m[1].split('\n')) {
+      const kv = /^([A-Za-z_][\w-]*):\s*(.*)$/.exec(line);
+      if (!kv) continue;
+      const v = kv[2].trim().replace(/^["']|["']$/g, '');
+      meta[kv[1]] = v === 'true' ? true : v === 'false' ? false : v;
+    }
+    return { meta, body: src.slice(m[0].length) };
+  }
+
+  function orderOf(files, dir) {
+    const raw = files.get(dir + '/_order.yaml');
+    if (!raw) return null;
+    return text(raw).split('\n')
+      .map((l) => /^\s*-\s*(.+?)\s*$/.exec(l))
+      .filter(Boolean)
+      .map((m) => m[1].replace(/^["']|["']$/g, ''));
+  }
+
+  function pageFile(files, dir, slug, isDir) {
+    const cands = isDir
+      ? [dir + '/' + slug + '/index.md', dir + '/' + slug + '/index.mdx']
+      : [dir + '/' + slug + '.md', dir + '/' + slug + '.mdx'];
+    return cands.find((p) => files.has(p)) || null;
+  }
+
+  function walk(files, dir, depth, out, opts) {
+    const dirs = new Set();
+    const leaves = new Set();
+    for (const p of files.keys()) {
+      if (p.indexOf(dir + '/') !== 0) continue;
+      const rest = p.slice(dir.length + 1);
+      if (rest.indexOf('/') >= 0) dirs.add(rest.split('/')[0]);
+      else if (/\.mdx?$/.test(rest) && !/^index\.mdx?$/.test(rest)) {
+        leaves.add(rest.replace(/\.mdx?$/, ''));
+      }
+    }
+    // No _order.yaml is possible (a hand-made zip); alphabetical is the same
+    // fallback ReadMe itself uses. Anything on disk the file does not mention is
+    // appended rather than skipped — an incomplete _order.yaml should cost you
+    // the ordering, not the page.
+    const listed = orderOf(files, dir);
+    const ordered = listed
+      ? listed.concat([...leaves, ...dirs].filter((s) => listed.indexOf(s) < 0).sort())
+      : [...leaves, ...dirs].sort();
+
+    for (const slug of ordered) {
+      const isDir = dirs.has(slug);
+      const file = pageFile(files, dir, slug, isDir);
+      if (file) {
+        const { meta, body } = frontmatter(text(files.get(file)));
+        // Hidden pages are unpublished drafts. Shipping them inside a document
+        // the customer hands to someone else is the wrong default.
+        if (meta.hidden !== true || opts.includeHidden) {
+          out.push({ slug, title: meta.title || slug, depth, body, path: file });
+        }
+      }
+      if (isDir) walk(files, dir + '/' + slug, depth + 1, out, opts);
+    }
+  }
+
+  /**
+   * @param {Map<string, Uint8Array|string>} files  unpacked zip
+   * @param {{includeHidden?:boolean}} [opts]
+   * @returns {Array<{category:string, pages:Array<{title,depth,body,slug,path}>}>}
+   */
+  function parseExport(files, opts) {
+    opts = opts || {};
+    const cats = orderOf(files, 'docs') || [...new Set([...files.keys()]
+      .filter((p) => p.indexOf('docs/') === 0 && p.split('/').length > 2)
+      .map((p) => p.split('/')[1]))].sort();
+
+    const out = [];
+    for (const cat of cats) {
+      const pages = [];
+      walk(files, 'docs/' + cat, 1, pages, opts);
+      if (pages.length) out.push({ category: cat, pages });
+    }
+    return out;
+  }
+
+  /** Every http(s) image a page set references, in document order. */
+  function imageUrls(pages) {
+    const urls = [];
+    const seen = new Set();
+    for (const pg of pages) {
+      for (const b of pg.blocks || []) {
+        const t = b && b.text ? String(b.text) : '';
+        const re = /!\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/g;
+        let m;
+        while ((m = re.exec(t))) { if (!seen.has(m[1])) { seen.add(m[1]); urls.push(m[1]); } }
+      }
+    }
+    return urls;
+  }
+
+  /** A filename that is safe on Windows and macOS. */
+  function safeName(s) {
+    return String(s || 'document').replace(/[/\\:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim();
+  }
+
+  root.readmeExport = { parseExport, frontmatter, orderOf, imageUrls, safeName };
+}(typeof window !== 'undefined' ? window : globalThis));
+
+</script>
+<script>
+// Block[] -> .docx
+//
+// The mirror image of renderBlocks(): same block model, WordprocessingML out
+// instead of Markdown. A .docx is a zip of XML parts, and converter.js already
+// ships makeZip() — so this returns the part list and the caller zips it. No
+// new dependency, nothing loaded at runtime.
+//
+// Word has no callout and no code block. A callout becomes a single-cell shaded
+// table, code becomes a shaded monospace paragraph. Both are what Word users
+// expect to see, and both survive a round trip through Word's own styles.
+//
+// Images are the one thing this cannot do alone. A ReadMe zip export contains
+// no image files at all — every <Image> is an https://files.readme.io URL — so
+// the bytes have to come from somewhere. The caller passes `media`: a map of
+// url -> {data, ext}. Anything missing renders as a labelled placeholder with
+// the URL, so a document is never silently short a screenshot.
+
+(function (root) {
+  'use strict';
+
+  const EMU_PER_PX = 9525;              // 96 dpi
+  const MAX_W_EMU = 6.0 * 914400;       // 6in: letter minus 1.25in margins
+
+  function xml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      // Word rejects the C0 range outright; a stray control char from a PDF or
+      // a copy-pasted terminal session makes the whole file unopenable.
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+  }
+
+  // ---------------------------------------------------------------- inline
+
+  // Markdown inline -> runs. Deliberately small: bold, italic, code, links and
+  // images are what ReadMe pages actually contain. Anything else stays literal,
+  // which is the safe direction — a stray asterisk is better than lost text.
+  function inlineRuns(text, ctx, baseProps) {
+    const runs = [];
+    const src = String(text == null ? '' : text);
+    let i = 0, buf = '';
+
+    const flush = () => { if (buf) { runs.push(textRun(buf, baseProps)); buf = ''; } };
+
+    while (i < src.length) {
+      const rest = src.slice(i);
+
+      // `code`
+      let m = /^`([^`]+)`/.exec(rest);
+      if (m) { flush(); runs.push(textRun(m[1], Object.assign({}, baseProps, { code: true }))); i += m[0].length; continue; }
+
+      // ![alt](url)
+      m = /^!\[([^\]]*)\]\(([^)\s]+)[^)]*\)/.exec(rest);
+      if (m) { flush(); runs.push.apply(runs, imageRuns(m[2], m[1], ctx)); i += m[0].length; continue; }
+
+      // [text](url)
+      m = /^\[([^\]]+)\]\(([^)\s]+)[^)]*\)/.exec(rest);
+      if (m) {
+        flush();
+        runs.push(hyperlink(m[1], m[2], ctx, baseProps));
+        i += m[0].length; continue;
+      }
+
+      // **bold** / __bold__
+      m = /^(\*\*|__)(?=\S)([\s\S]*?\S)\1/.exec(rest);
+      if (m) { flush(); runs.push.apply(runs, inlineRuns(m[2], ctx, Object.assign({}, baseProps, { b: true }))); i += m[0].length; continue; }
+
+      // *italic* — not intraword, and never an underscore: GFM does not treat
+      // client_credentials as emphasis and neither should this.
+      m = /^\*(?=\S)([^*]+?\S)\*/.exec(rest);
+      if (m) { flush(); runs.push.apply(runs, inlineRuns(m[1], ctx, Object.assign({}, baseProps, { i: true }))); i += m[0].length; continue; }
+
+      if (src[i] === '\n') { flush(); runs.push('<w:r><w:br/></w:r>'); i++; continue; }
+      buf += src[i]; i++;
+    }
+    flush();
+    return runs;
+  }
+
+  function rPr(p) {
+    p = p || {};
+    const out = [];
+    if (p.b) out.push('<w:b/>');
+    if (p.i) out.push('<w:i/>');
+    if (p.code) out.push('<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/><w:sz w:val="18"/>');
+    if (p.link) out.push('<w:color w:val="0B5FFF"/><w:u w:val="single"/>');
+    if (p.mono) out.push('<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/><w:sz w:val="18"/>');
+    return out.length ? '<w:rPr>' + out.join('') + '</w:rPr>' : '';
+  }
+
+  function textRun(t, props) {
+    // xml:space="preserve" or Word eats leading/trailing spaces between runs.
+    return '<w:r>' + rPr(props) + '<w:t xml:space="preserve">' + xml(t) + '</w:t></w:r>';
+  }
+
+  function hyperlink(label, url, ctx, baseProps) {
+    const rid = ctx.rel(url, true);
+    const inner = inlineRuns(label, ctx, Object.assign({}, baseProps, { link: true })).join('');
+    return '<w:hyperlink r:id="' + rid + '">' + inner + '</w:hyperlink>';
+  }
+
+  // ---------------------------------------------------------------- images
+
+  // Enough of PNG/JPEG/GIF to get intrinsic size. Word needs an extent in EMU;
+  // guessing one distorts every screenshot, so read it from the bytes.
+  function imageSize(bytes) {
+    if (!bytes || bytes.length < 24) return null;
+    const b = bytes;
+    if (b[0] === 0x89 && b[1] === 0x50) {                       // PNG
+      const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+      return { w: dv.getUint32(16), h: dv.getUint32(20) };
+    }
+    if (b[0] === 0xFF && b[1] === 0xD8) {                        // JPEG
+      let p = 2;
+      while (p < b.length - 9) {
+        if (b[p] !== 0xFF) { p++; continue; }
+        const marker = b[p + 1];
+        const len = (b[p + 2] << 8) | b[p + 3];
+        if (marker >= 0xC0 && marker <= 0xCF && marker !== 0xC4 && marker !== 0xC8 && marker !== 0xCC) {
+          return { h: (b[p + 5] << 8) | b[p + 6], w: (b[p + 7] << 8) | b[p + 8] };
+        }
+        p += 2 + len;
+      }
+      return null;
+    }
+    if (b[0] === 0x47 && b[1] === 0x49) {                        // GIF
+      return { w: b[6] | (b[7] << 8), h: b[8] | (b[9] << 8) };
+    }
+    return null;
+  }
+
+  function imageRuns(url, alt, ctx) {
+    const found = ctx.media && ctx.media[url];
+    if (!found || !found.data) {
+      // Never drop it silently — say what is missing and where it lived.
+      const label = alt ? alt + ' — ' : '';
+      return [textRun('[image: ' + label, { i: true }),
+              hyperlink(url, url, ctx, { i: true }),
+              textRun(']', { i: true })];
+    }
+    const rid = ctx.rel(found.path, false);
+    const size = imageSize(found.data) || { w: 600, h: 400 };
+    let cx = size.w * EMU_PER_PX, cy = size.h * EMU_PER_PX;
+    if (cx > MAX_W_EMU) { cy = Math.round(cy * (MAX_W_EMU / cx)); cx = MAX_W_EMU; }
+    const id = ctx.nextDrawingId();
+    return ['<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">' +
+      '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+      '<wp:docPr id="' + id + '" name="Image' + id + '" descr="' + xml(alt || '') + '"/>' +
+      '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+      '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+      '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+      '<pic:nvPicPr><pic:cNvPr id="' + id + '" name="Image' + id + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+      '<pic:blipFill><a:blip r:embed="' + rid + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+      '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+      '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+      '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>'];
+  }
+
+  // ---------------------------------------------------------------- blocks
+
+  function para(runsXml, style, extraPr) {
+    const pr = (style ? '<w:pStyle w:val="' + style + '"/>' : '') + (extraPr || '');
+    return '<w:p>' + (pr ? '<w:pPr>' + pr + '</w:pPr>' : '') + runsXml + '</w:p>';
+  }
+
+  function codeBlock(text) {
+    // One paragraph per line, kept together, so a fence does not fragment across
+    // pages any worse than it has to.
+    return String(text).split('\n').map((line) =>
+      para(textRun(line || ' ', { mono: true }), 'Code')).join('');
+  }
+
+  function tableXml(rows, ctx) {
+    if (!rows || !rows.length) return '';
+    const width = Math.max.apply(null, rows.map((r) => r.length));
+    const cellW = Math.floor(9360 / width);
+    const body = rows.map((r, ri) => {
+      const cells = [];
+      for (let c = 0; c < width; c++) {
+        const raw = r[c] == null ? '' : String(r[c]);
+        const shade = ri === 0 ? '<w:shd w:val="clear" w:fill="F1F3F5"/>' : '';
+        cells.push('<w:tc><w:tcPr><w:tcW w:w="' + cellW + '" w:type="dxa"/>' + shade + '</w:tcPr>' +
+          para(inlineRuns(raw, ctx, ri === 0 ? { b: true } : {}).join('') ||
+               textRun('', {}), 'TableText') + '</w:tc>');
+      }
+      return '<w:tr>' + (ri === 0 ? '<w:trPr><w:tblHeader/></w:trPr>' : '') + cells.join('') + '</w:tr>';
+    }).join('');
+    return '<w:tbl><w:tblPr><w:tblStyle w:val="TableGrid"/>' +
+      '<w:tblW w:w="0" w:type="auto"/>' +
+      '<w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map((s) =>
+        '<w:' + s + ' w:val="single" w:sz="4" w:space="0" w:color="D0D7DE"/>').join('') +
+      '</w:tblBorders></w:tblPr>' + body + '</w:tbl>' + para('', 'Spacer');
+  }
+
+  function calloutXml(block, ctx) {
+    // Word has no callout. A one-cell shaded table with a coloured left edge is
+    // the closest thing that still looks deliberate after a human edits it.
+    const emoji = block.emoji || '📘';
+    const head = textRun(emoji + ' ', {}) ;
+    const bodyRuns = String(block.text || '').split('\n')
+      .map((l) => para(inlineRuns(l, ctx, {}).join('') || textRun('', {}), 'CalloutText'))
+      .join('');
+    return '<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/>' +
+      '<w:tblBorders>' +
+      '<w:left w:val="single" w:sz="18" w:space="0" w:color="0B5FFF"/>' +
+      ['top', 'bottom', 'right', 'insideH', 'insideV'].map((s) =>
+        '<w:' + s + ' w:val="single" w:sz="4" w:space="0" w:color="DCE3EA"/>').join('') +
+      '</w:tblBorders></w:tblPr><w:tr><w:tc>' +
+      '<w:tcPr><w:tcW w:w="9360" w:type="dxa"/><w:shd w:val="clear" w:fill="F5F8FC"/></w:tcPr>' +
+      para(head, 'CalloutText') + bodyRuns +
+      '</w:tc></w:tr></w:tbl>' + para('', 'Spacer');
+  }
+
+  // Markdown pipe table inside an mdxtable/text blob -> rows. Only used for the
+  // rare <Table> component; plain tables already arrive as `table` blocks.
+  function pipeRows(text) {
+    const lines = String(text || '').split('\n').filter((l) => /\|/.test(l));
+    const rows = [];
+    for (const l of lines) {
+      if (/^\s*\|?\s*:?-{2,}/.test(l.replace(/\|/g, ''))) continue;
+      const cells = l.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
+      if (cells.length) rows.push(cells);
+    }
+    return rows;
+  }
+
+  function blocksToXml(blocks, ctx) {
+    const out = [];
+    for (const b of blocks || []) {
+      if (!b || b.kind === 'blank' || b.kind === 'toc') continue;
+      if (b.kind === 'heading') {
+        const lvl = Math.max(1, Math.min(6, b.level || 1));
+        out.push(para(inlineRuns(b.text, ctx, {}).join(''), 'Heading' + lvl));
+      } else if (b.kind === 'para') {
+        const runs = inlineRuns(b.text, ctx, {}).join('');
+        if (runs) out.push(para(runs, 'Body'));
+      } else if (b.kind === 'list') {
+        const lvl = Math.max(0, Math.min(8, b.level || 0));
+        const numId = b.ordered ? 2 : 1;
+        out.push(para(inlineRuns(String(b.text || '').replace(/<br\s*\/?>/gi, ' ')
+          .replace(/\s*\n\s*/g, ' ').trim(), ctx, {}).join(''),
+          'ListParagraph',
+          '<w:numPr><w:ilvl w:val="' + lvl + '"/><w:numId w:val="' + numId + '"/></w:numPr>'));
+      } else if (b.kind === 'code') {
+        out.push(codeBlock(b.text));
+      } else if (b.kind === 'callout') {
+        out.push(calloutXml(b, ctx));
+      } else if (b.kind === 'table') {
+        out.push(tableXml(b.rows, ctx));
+      } else if (b.kind === 'mdxtable') {
+        const rows = pipeRows(b.text);
+        out.push(rows.length ? tableXml(rows, ctx) : para(textRun(b.text, { mono: true }), 'Code'));
+      }
+    }
+    return out.join('');
+  }
+
+  // ---------------------------------------------------------------- document
+
+  const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="22"/></w:rPr></w:rPrDefault></w:docDefaults>
+<w:style w:type="paragraph" w:styleId="Normal" w:default="1"><w:name w:val="Normal"/></w:style>
+<w:style w:type="paragraph" w:styleId="Body"><w:name w:val="Body Text"/><w:pPr><w:spacing w:before="60" w:after="140" w:line="276" w:lineRule="auto"/></w:pPr></w:style>
+<w:style w:type="paragraph" w:styleId="Spacer"><w:name w:val="Spacer"/><w:pPr><w:spacing w:after="120"/></w:pPr><w:rPr><w:sz w:val="8"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:pPr><w:spacing w:after="320"/></w:pPr><w:rPr><w:b/><w:sz w:val="56"/><w:color w:val="0B2A4A"/></w:rPr></w:style>
+${[1, 2, 3, 4, 5, 6].map((n) => {
+  const sz = [32, 28, 25, 23, 22, 22][n - 1];
+  return '<w:style w:type="paragraph" w:styleId="Heading' + n + '"><w:name w:val="heading ' + n +
+    '"/><w:basedOn w:val="Normal"/><w:next w:val="Body"/><w:pPr><w:outlineLvl w:val="' + (n - 1) +
+    '"/><w:keepNext/><w:spacing w:before="' + (360 - n * 30) + '" w:after="120"/></w:pPr>' +
+    '<w:rPr><w:b/><w:sz w:val="' + sz + '"/><w:color w:val="' + (n <= 2 ? '0B2A4A' : '243B53') + '"/></w:rPr></w:style>';
+}).join('')}
+<w:style w:type="paragraph" w:styleId="Code"><w:name w:val="Code"/><w:pPr><w:shd w:val="clear" w:fill="F6F8FA"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:ind w:left="180" w:right="180"/></w:pPr><w:rPr><w:rFonts w:ascii="Consolas" w:hAnsi="Consolas"/><w:sz w:val="18"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="CalloutText"><w:name w:val="Callout Text"/><w:pPr><w:spacing w:before="60" w:after="60"/><w:ind w:left="120" w:right="120"/></w:pPr></w:style>
+<w:style w:type="paragraph" w:styleId="TableText"><w:name w:val="Table Text"/><w:pPr><w:spacing w:before="40" w:after="40"/></w:pPr><w:rPr><w:sz w:val="20"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="ListParagraph"><w:name w:val="List Paragraph"/><w:pPr><w:spacing w:after="60"/><w:contextualSpacing/></w:pPr></w:style>
+<w:style w:type="table" w:styleId="TableGrid"><w:name w:val="Table Grid"/></w:style>
+</w:styles>`;
+
+  const BULLETS = ['\uF0B7', '\uF06F', '\uF0A7'];
+
+  function numbering() {
+    const lvls = (fmt) => [0, 1, 2, 3, 4, 5, 6, 7, 8].map((l) =>
+      '<w:lvl w:ilvl="' + l + '"><w:start w:val="1"/><w:numFmt w:val="' +
+      (fmt === 'bullet' ? 'bullet' : ['decimal', 'lowerLetter', 'lowerRoman'][l % 3]) +
+      '"/><w:lvlText w:val="' + (fmt === 'bullet' ? BULLETS[l % 3] : '%' + (l + 1) + '.') +
+      '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' + (360 + l * 360) + '" w:hanging="360"/></w:pPr>' +
+      (fmt === 'bullet' ? '<w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol"/></w:rPr>' : '') +
+      '</w:lvl>').join('');
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:abstractNum w:abstractNumId="1">' + lvls('bullet') + '</w:abstractNum>' +
+      '<w:abstractNum w:abstractNumId="2">' + lvls('decimal') + '</w:abstractNum>' +
+      '<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>' +
+      '<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>' +
+      '</w:numbering>';
+  }
+
+  /**
+   * Build one .docx.
+   *
+   * @param {{title:string, pages:Array<{title:string,depth:number,blocks:Array}>}} doc
+   * @param {{media?:Object, toc?:boolean}} [opts]  media maps image url -> {data,ext}
+   * @returns {Array<{path:string,data:(string|Uint8Array)}>} parts for makeZip()
+   */
+  function renderDocx(doc, opts) {
+    opts = opts || {};
+    const media = opts.media || {};
+    const rels = [];
+    const files = [];
+    let drawingId = 1;
+    const seenMedia = {};
+
+    const ctx = {
+      media,
+      nextDrawingId() { return drawingId++; },
+      rel(target, external) {
+        if (!external && seenMedia[target]) return seenMedia[target];
+        const id = 'rId' + (rels.length + 10);
+        rels.push('<Relationship Id="' + id + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/' +
+          (external ? 'hyperlink" Target="' + xml(target) + '" TargetMode="External"'
+                    : 'image" Target="' + xml(target) + '"') + '/>');
+        if (!external) seenMedia[target] = id;
+        return id;
+      },
+    };
+
+    // media parts, keyed by url so a repeated screenshot is stored once
+    let n = 0;
+    for (const url of Object.keys(media)) {
+      const m = media[url];
+      if (!m || !m.data) continue;
+      n++;
+      m.path = 'media/image' + n + '.' + (m.ext || 'png');
+      files.push({ path: 'word/' + m.path, data: m.data });
+    }
+
+    const body = [];
+    body.push(para(textRun(doc.title, {}), 'Title'));
+    if (opts.toc !== false) {
+      // A real TOC field: empty until the reader hits "update field", which is
+      // the normal Word contract and beats a hand-built list that goes stale.
+      body.push('<w:p><w:pPr><w:pStyle w:val="Body"/></w:pPr>' +
+        '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+        '<w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h \\z \\u </w:instrText></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+        '<w:r><w:t>Right-click and choose “Update Field” to build the table of contents.</w:t></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>');
+      body.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>');
+    }
+
+    for (const page of doc.pages || []) {
+      const lvl = Math.max(1, Math.min(6, page.depth || 1));
+      body.push(para(inlineRuns(page.title, ctx, {}).join(''), 'Heading' + lvl));
+      body.push(blocksToXml(page.blocks, ctx));
+    }
+
+    const document = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+      'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">' +
+      '<w:body>' + body.join('') +
+      '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/>' +
+      '<w:pgMar w:top="1440" w:right="1080" w:bottom="1440" w:left="1080" w:header="720" w:footer="720"/>' +
+      '</w:sectPr></w:body></w:document>';
+
+    const exts = {};
+    Object.keys(media).forEach((u) => { if (media[u] && media[u].ext) exts[media[u].ext] = true; });
+    const defaults = ['<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>',
+      '<Default Extension="xml" ContentType="application/xml"/>']
+      .concat(Object.keys(exts).map((e) =>
+        '<Default Extension="' + e + '" ContentType="image/' + (e === 'jpg' ? 'jpeg' : e) + '"/>'));
+
+    files.push({ path: '[Content_Types].xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' + defaults.join('') +
+      '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+      '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+      '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+      '</Types>' });
+
+    files.push({ path: '_rels/.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+      '</Relationships>' });
+
+    files.push({ path: 'word/_rels/document.xml.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' +
+      rels.join('') + '</Relationships>' });
+
+    files.push({ path: 'word/styles.xml', data: STYLES });
+    files.push({ path: 'word/numbering.xml', data: numbering() });
+    files.push({ path: 'word/document.xml', data: document });
+    return files;
+  }
+
+  root.docxRender = { renderDocx, imageSize, inlineRuns, pipeRows };
+}(typeof window !== 'undefined' ? window : globalThis));
 
 </script>
 <script>
@@ -5275,6 +5876,177 @@ $('previewBtn').addEventListener('click', openPreview);
 $('previewClose').addEventListener('click', closePreview);
 $('previewModal').addEventListener('click', (e) => { if (e.target.id === 'previewModal') closePreview(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePreview(); });
+
+</script>
+<script>
+// ReadMe export (.zip) -> one Word document per category.
+//
+// The other direction. Everything upstream of the writer is the code the rest
+// of the page already uses: readZip unpacks the export, readme-export walks it
+// in _order.yaml order, md-clean turns each page into Block[], applyPasses does
+// the same cleanup, and docx-render emits the .docx.
+//
+// THE IMAGE FETCH IS THE ONE NETWORK CALL THIS PAGE MAKES.
+//   A ReadMe export contains no image files. Every picture in the Markdown is a
+//   link to files.readme.io, so a Word document with the screenshots in it can
+//   only exist if those bytes are fetched. connect-src pins that to exactly one
+//   origin, GET only. Nothing of the user's is ever sent — the request carries a
+//   public CDN URL that was already sitting in their own export.
+//   Untick the box and every image becomes a labelled placeholder instead.
+
+(function () {
+  'use strict';
+
+  const $ = (id) => document.getElementById(id);
+  if (!$('r2wRoot')) return;
+
+  let picked = null;          // {name, buffer}
+  let built = [];             // [{name, blob}]
+
+  function status(msg) { $('r2wStatus').textContent = msg; }
+
+  function download(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  }
+
+  /* ------------------------------------------------------------- nav */
+
+  function show() {
+    $('r2wRoot').hidden = false;
+    $('docShell').hidden = true;
+    if ($('twRoot')) $('twRoot').hidden = true;
+    $('navR2w').classList.add('on');
+    $('navR2w').setAttribute('aria-selected', 'true');
+    for (const id of ['navDocs', 'navTables']) {
+      $(id).classList.remove('on');
+      $(id).setAttribute('aria-selected', 'false');
+    }
+  }
+  // table-wizard.js owns the Documents/Tables pair; these listeners are additive
+  // and only have to put this shell away.
+  function hide() {
+    $('r2wRoot').hidden = true;
+    $('navR2w').classList.remove('on');
+    $('navR2w').setAttribute('aria-selected', 'false');
+  }
+  $('navR2w').addEventListener('click', show);
+  $('navDocs').addEventListener('click', hide);
+  if ($('navTables')) $('navTables').addEventListener('click', hide);
+  if ($('toR2w')) $('toR2w').addEventListener('click', (e) => { e.preventDefault(); show(); });
+
+  /* ------------------------------------------------------------ input */
+
+  const drop = $('r2wDrop');
+  drop.addEventListener('click', () => $('r2wPicker').click());
+  drop.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('r2wPicker').click(); }
+  });
+  ['dragenter', 'dragover'].forEach((ev) =>
+    drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('hover'); }));
+  ['dragleave', 'drop'].forEach((ev) =>
+    drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('hover'); }));
+  drop.addEventListener('drop', (e) => take(e.dataTransfer.files));
+  $('r2wPicker').addEventListener('change', (e) => take(e.target.files));
+
+  async function take(list) {
+    const f = [...(list || [])].find((x) => /\.zip$/i.test(x.name));
+    if (!f) { status('That is not a .zip. Export your project from ReadMe and drop the file here.'); return; }
+    picked = { name: f.name, buffer: await f.arrayBuffer() };
+    $('r2wFiles').hidden = false;
+    $('r2wFiles').innerHTML = '<li>' + f.name.replace(/</g, '&lt;') + '</li>';
+    $('r2wGo').disabled = false;
+    status('Ready. One Word document per category, in sidebar order.');
+  }
+
+  /* ---------------------------------------------------------- convert */
+
+  async function fetchImage(url) {
+    try {
+      const res = await fetch(url, { mode: 'cors', credentials: 'omit' });
+      if (!res.ok) return null;
+      const buf = new Uint8Array(await res.arrayBuffer());
+      const fromUrl = (/\.(png|jpe?g|gif|webp)(?:$|\?)/i.exec(url) || [])[1];
+      const fromType = (res.headers.get('content-type') || '').split('/')[1];
+      return { data: buf, ext: (fromUrl || fromType || 'png').split(';')[0].toLowerCase() };
+    } catch (e) {
+      return null;                       // blocked, offline or 404 — placeholder
+    }
+  }
+
+  $('r2wGo').addEventListener('click', async () => {
+    if (!picked) return;
+    $('r2wGo').disabled = true;
+    built = [];
+    $('r2wReport').hidden = true;
+    $('r2wReport').innerHTML = '';
+
+    try {
+      status('Unpacking…');
+      const files = await window.docx2readme.readZip(picked.buffer);
+      const groups = window.readmeExport.parseExport(files, { includeHidden: $('r2wHidden').checked });
+      if (!groups.length) { status('No docs/ folder in that zip — is it a ReadMe export?'); $('r2wGo').disabled = false; return; }
+
+      const wantImages = $('r2wImages').checked;
+      const rows = [];
+
+      for (const g of groups) {
+        status('Converting ' + g.category + '…');
+        const pages = g.pages.map((pg) => {
+          const report = {};
+          let blocks = window.mdClean.markdownToBlocks(pg.body, report);
+          // topLevel nests a page's own headings under its title; maxLevel 6
+          // because a grandchild page starts at H4 and the page default of 3
+          // would flatten everything below it into one level.
+          blocks = window.docx2readme.applyPasses(blocks, Object.assign(
+            {}, window.docx2readme.defaultOptions(),
+            { topLevel: Math.min(6, pg.depth + 1), maxLevel: 6, noCallouts: true }), report);
+          return { title: pg.title, depth: pg.depth, blocks };
+        });
+
+        const urls = window.readmeExport.imageUrls(pages);
+        const media = {};
+        let got = 0;
+        if (wantImages && urls.length) {
+          for (let i = 0; i < urls.length; i++) {
+            status('Fetching image ' + (i + 1) + ' of ' + urls.length + ' for ' + g.category + '…');
+            const img = await fetchImage(urls[i]);
+            if (img) { media[urls[i]] = img; got++; }
+          }
+        }
+
+        const parts = window.docxRender.renderDocx({ title: g.category, pages }, { media });
+        const name = window.readmeExport.safeName(g.category) + '.docx';
+        built.push({ name, blob: window.docx2readme.makeZip(parts) });
+        rows.push({ cat: g.category, pages: pages.length, images: urls.length, got });
+      }
+
+      $('r2wReport').hidden = false;
+      $('r2wReport').innerHTML = rows.map((r) =>
+        '<li><strong>' + r.cat.replace(/</g, '&lt;') + '.docx</strong> — ' + r.pages + ' page(s)' +
+        (r.images ? ', ' + r.got + ' of ' + r.images + ' image(s) embedded' : '') + '</li>').join('');
+
+      $('r2wZip').disabled = built.length < 2;
+      status(built.length + ' document(s) ready.');
+      for (const b of built) download(b.blob, b.name);
+    } catch (err) {
+      status('Could not convert that file: ' + (err && err.message ? err.message : err));
+    }
+    $('r2wGo').disabled = false;
+  });
+
+  $('r2wZip').addEventListener('click', async () => {
+    if (!built.length) return;
+    const parts = [];
+    for (const b of built) parts.push({ path: b.name, data: new Uint8Array(await b.blob.arrayBuffer()) });
+    download(window.docx2readme.makeZip(parts), 'readme-word-export.zip');
+  });
+}());
 
 </script>
 <script>

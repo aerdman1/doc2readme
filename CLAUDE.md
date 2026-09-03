@@ -8,10 +8,19 @@ whoever *changes* it.
 
 ## The one constraint everything else follows from
 
-The page must never be able to make a network request. That is not a policy,
-it is enforced: `index.html`, `vercel.json` and the single-file build all set
-`connect-src 'none'`, so the browser itself blocks it. Users drop confidential
-documents into this thing; the guarantee is the product.
+Nothing a user drops in ever leaves the machine. That is not a policy, it is
+enforced: `index.html`, `vercel.json` and the single-file build pin `connect-src`
+to a single read-only origin and `default-src` to `'none'`, so the browser itself
+blocks everything else. Users drop confidential documents into this thing; the
+guarantee is the product.
+
+**The one allowed origin is `https://files.readme.io`, and it exists for exactly
+one reason.** A ReadMe zip export contains no image files — every picture in the
+Markdown is a link to that CDN — so ReadMe → Word can only put screenshots in the
+document by fetching them. The request carries a public URL that was already in
+the user's own export; nothing of theirs is transmitted. It was `'none'` until
+that feature landed, and `tests/build.test.js` asserts the list is exactly that
+one origin so it cannot quietly widen. Do not add a second host.
 
 Consequences, all deliberate:
 
@@ -19,10 +28,11 @@ Consequences, all deliberate:
   loaded in order by `index.html`. `jsdom` is a devDependency for tests only
   and never reaches a browser.
 - **pdf.js is vendored**, not loaded from a CDN. A CDN would be blocked anyway.
-- **Images can't be uploaded for the user.** They are written into the zip with
-  relative paths and the UI says so.
+- **Images can't be uploaded for the user.** Going *to* ReadMe they are written
+  into the zip with relative paths and the UI says so. Coming *from* ReadMe they
+  are fetched from files.readme.io and embedded in the .docx.
 
-Do not add a dependency that loads at runtime. Do not relax `connect-src`.
+Do not add a dependency that loads at runtime. Do not widen `connect-src`.
 
 ## Layout
 
@@ -41,6 +51,29 @@ build.py            test → stamp index.html → build the single file → re-v
 vendor/             pdf.js (legacy build — see vendor/README.md)
 tests/
 ```
+
+### Two directions, one block model
+
+`X -> Block[] -> renderBlocks() -> Markdown` is the original direction. ReadMe →
+Word is the same spine with a second writer on the end:
+
+```
+export.zip -> readme-export -> md-clean -> Block[] -> applyPasses -> docx-render -> makeZip -> .docx
+```
+
+A .docx is a zip of XML, and `makeZip()` was already here for the other
+direction, so the writer adds no dependency. `tools/export2word.js` runs that
+same pipeline in Node for bulk conversions.
+
+Two things about it are load bearing:
+
+- **Order comes from `_order.yaml`, and depth is nav depth.** A category is the
+  document title, its pages are H1, their children H2. `applyPasses` is called
+  with `topLevel: depth + 1` and **`maxLevel: 6`** — not the page default of 3,
+  which flattens every heading under a grandchild page into one level.
+- **A bullet needs a real glyph.** `<w:lvlText w:val=""/>` is a structurally
+  valid list whose markers do not render, so five bullets read as five stray
+  paragraphs. There is a test for it.
 
 ### The block model is the whole architecture
 

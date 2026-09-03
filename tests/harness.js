@@ -48,7 +48,7 @@ class ShimDecompression {
 // index.html loads these in this order; a test that loads them differently is
 // not testing what ships.
 const SCRIPTS = ['preview.js', 'md-clean.js', 'mdx-table.js', 'html-extract.js', 'gitsync.js',
-                 'pdf-extract.js', 'converter.js', 'table-wizard.js'];
+                 'pdf-extract.js', 'converter.js', 'readme-export.js', 'docx-render.js', 'table-wizard.js'];
 
 function makeWindow({ withApp = false } = {}) {
   const html = withApp

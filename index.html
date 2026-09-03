@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; worker-src 'self' blob:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https://files.readme.io; font-src 'self'; connect-src https://files.readme.io; worker-src 'self' blob:; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>doc2readme — Word, PDF, HTML &amp; Markdown to ReadMe</title>
@@ -18,6 +18,7 @@
   <div class="appnav" role="tablist">
     <button id="navDocs" class="on" role="tab" aria-selected="true">Documents</button>
     <button id="navTables" role="tab" aria-selected="false">Tables</button>
+    <button id="navR2w" role="tab" aria-selected="false">ReadMe &rarr; Word</button>
   </div>
   <span class="spacer"></span>
   <span class="pill"><span class="dot"></span>Runs entirely in your browser — nothing is uploaded</span>
@@ -195,9 +196,12 @@
       </div>
     </div>
 
+    <p class="subtle crosslink">Already have docs in ReadMe and want them the other way round?
+      <a href="#" id="toR2w">Convert a ReadMe export to Word</a>.</p>
+
     <div class="banner" id="imgBanner" hidden>
       <span class="bi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 16-5-5-9 9"/></svg></span>
-      <div><strong>Images aren't uploaded for you.</strong> This page can't reach ReadMe, so extracted
+      <div><strong>Images aren't uploaded for you.</strong> This direction never contacts ReadMe, so extracted
         images are written into the <code>images/</code> folder of the .zip and referenced by relative
         path. Upload them to ReadMe (or any host) and replace those paths with the full URLs. Images
         that were already full URLs in your document are left untouched and will keep working.</div>
@@ -224,6 +228,54 @@
       Safari 16.4+). Output is Markdown you can paste into ReadMe, or a <code>.zip</code> whose
       <code>docs/</code> folder drops into a ReadMe git-synced repository. Converted pages reproduce
       your document faithfully — give them a skim before publishing.</div></div>
+  </div>
+</div>
+
+
+<div class="shell" id="r2wRoot" hidden>
+  <div class="side">
+    <div class="panel">
+      <h2>Existing ReadMe docs</h2>
+      <div class="body">
+        <div class="drop" id="r2wDrop" role="button" tabindex="0" aria-label="Choose a ReadMe export to convert">
+          <strong>Drop your ReadMe export .zip here</strong>
+          <span class="sm">or click to browse</span>
+          <span class="subtle">In ReadMe: Project&nbsp;Settings &rarr; Export &rarr; download the .zip</span>
+          <input type="file" id="r2wPicker" accept=".zip" hidden>
+        </div>
+        <ul class="files" id="r2wFiles" hidden></ul>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="body">
+        <div class="checkline"><input type="checkbox" id="r2wImages" checked>
+          <label for="r2wImages">Download and embed images</label></div>
+        <div class="checkline"><input type="checkbox" id="r2wHidden">
+          <label for="r2wHidden">Include hidden pages</label></div>
+        <div class="btnstack">
+          <button class="primary" id="r2wGo" disabled>Convert to Word</button>
+          <button class="ghost" id="r2wZip" disabled>Download all as .zip</button>
+        </div>
+        <div class="hint" id="r2wStatus">One Word document per category, in sidebar order.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="panel">
+      <div class="body">
+        <h3>ReadMe &rarr; Word</h3>
+        <p>Drop the .zip ReadMe gives you and get one Word document per category, with pages in
+          the same order as your sidebar, headings nested to match, and tables, callouts, code and
+          images carried across.</p>
+        <p class="subtle">A ReadMe export contains no image files &mdash; every picture is a link to
+          files.readme.io. Leave &ldquo;Download and embed images&rdquo; ticked and this page fetches
+          them from there so they end up inside the document. Untick it and each one becomes a
+          labelled placeholder with its URL. Nothing of yours is uploaded either way.</p>
+        <ul class="files" id="r2wReport" hidden></ul>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -322,13 +374,16 @@
 </div>
 
 <script src="preview.js?v=5771ce81"></script>
-<script src="md-clean.js?v=cca58c9e"></script>
+<script src="md-clean.js?v=c3cdce46"></script>
 <script src="mdx-table.js?v=e8e16417"></script>
 <script src="html-extract.js?v=941993d0"></script>
 <script src="gitsync.js?v=30924081"></script>
 <script src="pdf-extract.js?v=82b66357"></script>
-<script src="converter.js?v=7532ee25"></script>
-<script src="app.js?v=f1e4e63e"></script>
+<script src="converter.js?v=930a6223"></script>
+<script src="readme-export.js?v=9f7fd498"></script>
+    <script src="docx-render.js?v=45f49f91"></script>
+    <script src="app.js?v=f1e4e63e"></script>
+<script src="readme2word.js?v=e94eb3e5"></script>
 <script src="table-wizard.js?v=b4e0996f"></script>
 </body>
 </html>

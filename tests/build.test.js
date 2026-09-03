@@ -14,7 +14,8 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const ASSETS = ['styles.css', 'preview.js', 'md-clean.js', 'mdx-table.js', 'html-extract.js',
-                'gitsync.js', 'pdf-extract.js', 'converter.js', 'app.js'];
+                'gitsync.js', 'pdf-extract.js', 'converter.js', 'readme-export.js',
+                'docx-render.js', 'app.js', 'readme2word.js'];
 
 const read = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
 const digest = (f) => crypto.createHash('sha256')
@@ -32,13 +33,19 @@ test('doc2readme.html is built from the current sources — run `npm run build`'
   assert.deepEqual(stale, []);
 });
 
-test('the single-file build keeps connect-src none — that is the privacy claim', () => {
-  const bundle = read('doc2readme.html');
-  const csp = /content="([^"]*connect-src[^"]*)"/.exec(bundle);
-  assert.ok(csp, 'no Content-Security-Policy in the bundle');
-  assert.match(csp[1], /connect-src 'none'/);
-  assert.match(read('index.html'), /connect-src 'none'/);
-  assert.match(read('vercel.json'), /connect-src 'none'/);
+test('connect-src allows exactly one read-only origin — that is the privacy claim', () => {
+  // Converting a ReadMe export to Word needs the images, and an export contains
+  // none of them: every picture is a link to files.readme.io. That one origin is
+  // therefore allowed, and nothing else is — no wildcard, no second host. The
+  // claim the page makes is that your documents are never sent anywhere, and
+  // this is what still proves it.
+  const ALLOWED = 'https://files.readme.io';
+  for (const file of ['doc2readme.html', 'index.html', 'vercel.json']) {
+    const csp = /connect-src ([^;"']*)/.exec(read(file));
+    assert.ok(csp, 'no connect-src in ' + file);
+    const origins = csp[1].trim().split(/\s+/).filter(Boolean);
+    assert.deepEqual(origins, [ALLOWED], file + ' widened connect-src');
+  }
 });
 
 test('the single-file build references nothing outside itself', () => {
