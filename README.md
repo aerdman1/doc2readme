@@ -1,6 +1,6 @@
 # doc2readme
 
-**Word, PDF, HTML and Markdown → ReadMe-ready Markdown, entirely in your browser.**
+**Word, PDF, HTML and Markdown → ReadMe-ready Markdown — and ReadMe → Word — entirely in your browser.**
 
 ### → [Open the converter](https://aerdman1.github.io/doc2readme/)
 
@@ -12,10 +12,15 @@ a git-synced repo.
 
 ## Nothing is uploaded
 
-No server, no account, no sign-in. The page ships a Content-Security-Policy of
-`connect-src 'none'`, so the browser itself blocks it from making any network
-request. Your document staying private isn't a policy — the page isn't capable
-of sending it anywhere. It also works offline.
+No server, no account, no sign-in. The page ships a Content-Security-Policy that
+pins `connect-src` to a single origin, `https://files.readme.io`, and blocks
+everything else. Your document staying private isn't a policy — the page isn't
+capable of sending it anywhere.
+
+That one origin is ReadMe's public image CDN, and it is only ever *read from*,
+only in the ReadMe → Word direction, and only to fetch pictures whose URLs were
+already sitting in your own export. Untick **Download and embed images** and the
+page makes no network request at all.
 
 ---
 
@@ -98,6 +103,39 @@ reference/
   extracted from any of them are written next to the page that uses them.
 
 Commit the `docs/` folder to a repo connected to ReadMe and it publishes.
+
+---
+
+## Going the other way: ReadMe → Word
+
+Some customers need their docs as a Word file — for legal redlines, a
+procurement response, or a quality system that only ingests `.docx`. ReadMe
+exports to PDF and to a `.zip` of Markdown, but not to Word.
+
+Open the **ReadMe → Word** tab and drop the `.zip` ReadMe gives you
+(Project Settings → Export). You get **one Word document per category**, with:
+
+- pages in the same order as your sidebar, read from `_order.yaml`
+- headings nested to match — category is the document title, its pages are H1,
+  their children H2
+- tables, callouts, code blocks and lists carried across as real Word features
+- a live table-of-contents field (right-click → *Update Field* to build it)
+- screenshots embedded in the file
+
+Hidden pages are left out unless you ask for them.
+
+**About the images.** A ReadMe export contains no image files — every picture in
+the Markdown is a link to `files.readme.io`. So the pictures can only reach your
+document by being fetched, which is what that one allowed origin is for. Any
+image that can't be fetched becomes a labelled placeholder with its URL, never a
+silent gap.
+
+For bulk or scripted runs there is a command-line version that does the same
+thing outside the browser:
+
+```sh
+node tools/export2word.js <export.zip> [outDir]
+```
 
 ---
 
