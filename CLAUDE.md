@@ -22,6 +22,15 @@ the user's own export; nothing of theirs is transmitted. It was `'none'` until
 that feature landed, and `tests/build.test.js` asserts the list is exactly that
 one origin so it cannot quietly widen. Do not add a second host.
 
+**Reverting it to `'none'` was considered and rejected (2026-09-03).** Two facts
+decide it. `files.readme.io` serves `access-control-allow-origin: *`, so the
+fetch genuinely works and the feature is real rather than aspirational — and
+`img-src` in this same CSP already lists that exact origin, so tightening
+`connect-src` alone would remove the screenshots from every hosted Word export
+while leaving the same host reachable. It would cost the feature and buy close
+to nothing. Do not re-open this without a reason that addresses the `img-src`
+point.
+
 Consequences, all deliberate:
 
 - **No runtime dependencies, no bundler, no framework.** Plain classic scripts
